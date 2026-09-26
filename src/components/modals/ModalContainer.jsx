@@ -10,6 +10,7 @@ import ReceiptModal from './ReceiptModal'
 import AdminStaffModal from './AdminStaffModal'
 import OrderRegisterPane from '../pos/OrderRegisterPane'
 import HppCalculatorModal from './HppCalculatorModal'
+import PinAuthModal from './PinAuthModal' // <-- Import Baru
 import { X } from 'lucide-react'
 
 export default function ModalContainer({ modalState = {} }) {
@@ -23,7 +24,8 @@ export default function ModalContainer({ modalState = {} }) {
     showAdminStaffModal, setShowAdminStaffModal,
     showPaymentModal, setShowPaymentModal,
     showReceiptModal, setShowReceiptModal,
-    showHppModal, setShowHppModal, // <-- Tambahkan ini
+    showHppModal, setShowHppModal,
+    showPinModal, setShowPinModal, pinSuccessCallback, // <-- Prop Baru
     selectedOrderDetail, setSelectedOrderDetail,
     isMobileCartOpen, setIsMobileCartOpen,
     
@@ -166,9 +168,19 @@ export default function ModalContainer({ modalState = {} }) {
         />
       )}
 
-      {/* MODAL KALKULATOR HPP */}
       {showHppModal && (
         <HppCalculatorModal onClose={() => setShowHppModal?.(false)} />
+      )}
+
+      {/* MODAL OTORISASI NUMPAD PIN */}
+      {showPinModal && (
+        <PinAuthModal
+          onClose={() => setShowPinModal?.(false)}
+          onSuccess={() => {
+            if (typeof pinSuccessCallback === 'function') pinSuccessCallback()
+          }}
+          staffList={staffList}
+        />
       )}
     </>
   )

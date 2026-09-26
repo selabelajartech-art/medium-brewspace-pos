@@ -9,7 +9,7 @@ export default function InventoryGrid({
   setShowToppingModal,
   setShowIngredientModal,
   setSelectedRecipeProduct,
-  setShowHppModal // <-- Tambahkan ini
+  setShowHppModal
 }) {
   const getCategoryName = (catId) => {
     const cat = categories.find((c) => c.id === catId)
@@ -17,7 +17,7 @@ export default function InventoryGrid({
   }
 
   return (
-    <div className="flex-1 p-5 overflow-y-auto bg-slate-50 space-y-4">
+    <div className="flex-1 p-5 overflow-y-auto bg-slate-50 space-y-4 pb-28 md:pb-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h3 className="font-extrabold text-sm text-slate-900">Kelola Produk, Resep & Bahan Baku</h3>

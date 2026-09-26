@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Check, Users, ShoppingBag, Plus, Minus } from 'lucide-react'
+import { X, Check, Users, ShoppingBag, Plus, Minus, AlertCircle } from 'lucide-react'
 
 export default function PaymentModal({
   setShowPaymentModal,
@@ -10,25 +10,24 @@ export default function PaymentModal({
   checkoutLoading = false,
   handleCheckout
 }) {
-  const [paymentMode, setPaymentMode] = useState('FULL') // 'FULL' | 'SPLIT_EQUAL' | 'SPLIT_ITEM'
+  const [paymentMode, setPaymentMode] = useState('FULL')
   const [splitPeople, setSplitPeople] = useState(2)
-  const [splitItemQtyMap, setSplitItemQtyMap] = useState({}) // { [cartKey]: qtyToPay }
+  const [splitItemQtyMap, setSplitItemQtyMap] = useState({})
 
-  // Penanganan Defensif Array (Anti-Crash bila prop null / undefined)
   const safeCart = Array.isArray(cart) ? cart : []
   const safePayments = Array.isArray(payments) ? payments : []
 
-  // Kalkulasi Split Equal
-  const splitAmountPerPerson = Math.ceil((grandTotal || 0) / (parseInt(splitPeople) || 1))
+  const numPeople = parseInt(splitPeople) || 1
+  const baseAmountPerPerson = Math.floor(grandTotal / numPeople)
+  const remainder = grandTotal - (baseAmountPerPerson * numPeople)
+  const splitAmountPerPerson = Math.ceil(grandTotal / numPeople)
 
-  // Kalkulasi Split Item Parsial
   const splitItemSubtotal = safeCart.reduce((sum, item) => {
     if (!item) return sum
     const qtyToPay = splitItemQtyMap[item.cartKey] || 0
     return sum + (item.finalPrice || 0) * qtyToPay
   }, 0)
 
-  // Target Nominal
   const targetTotal =
     paymentMode === 'SPLIT_EQUAL'
       ? splitAmountPerPerson
@@ -39,26 +38,23 @@ export default function PaymentModal({
   const totalPaid = safePayments.reduce((sum, p) => sum + (parseFloat(p?.amount) || 0), 0)
   const changeAmount = Math.max(0, totalPaid - targetTotal)
 
-  // Handler Pengubah Jumlah Unit Sesi Ini
+  // FIX: Mengeluarkan setPayments dari updater callback internal agar tidak memicu re-render conflict
   const updateSplitQty = (cartKey, maxQty, delta) => {
-    setSplitItemQtyMap((prev) => {
-      const current = prev[cartKey] || 0
-      const next = Math.max(0, Math.min(maxQty, current + delta))
-      const updated = { ...prev, [cartKey]: next }
+    const current = splitItemQtyMap[cartKey] || 0
+    const next = Math.max(0, Math.min(maxQty, current + delta))
+    const updated = { ...splitItemQtyMap, [cartKey]: next }
 
-      // Hitung ulang nominal pembayaran
-      const nextSub = safeCart.reduce((sum, item) => {
-        if (!item) return sum
-        const q = updated[item.cartKey] || 0
-        return sum + (item.finalPrice || 0) * q
-      }, 0)
+    setSplitItemQtyMap(updated)
 
-      if (typeof setPayments === 'function') {
-        setPayments([{ method: safePayments[0]?.method || 'CASH', amount: nextSub.toString() }])
-      }
+    const nextSub = safeCart.reduce((sum, item) => {
+      if (!item) return sum
+      const q = updated[item.cartKey] || 0
+      return sum + (item.finalPrice || 0) * q
+    }, 0)
 
-      return updated
-    })
+    if (typeof setPayments === 'function') {
+      setPayments([{ method: safePayments[0]?.method || 'CASH', amount: nextSub.toString() }])
+    }
   }
 
   const handleQuickMoney = (nominal) => {
@@ -70,10 +66,15 @@ export default function PaymentModal({
   const quickMoneyOptions = Array.from(new Set([targetTotal, 20000, 50000, 100000])).filter(Boolean)
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+    // FIX: Klik di luar window (overlay) akan menutup modal
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) setShowPaymentModal?.(false)
+      }}
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto print:hidden"
+    >
       <div className="bg-white rounded-2xl p-4 sm:p-5 w-full max-w-md shadow-2xl relative border border-slate-200 space-y-4 my-auto">
         
-        {/* Header Modal */}
         <div className="flex justify-between items-center border-b border-slate-100 pb-3">
           <div>
             <h3 className="font-extrabold text-sm text-slate-900">Proses Pembayaran</h3>
@@ -84,7 +85,6 @@ export default function PaymentModal({
           </button>
         </div>
 
-        {/* Tab Pilihan Mode Pembayaran */}
         <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl text-[11px] font-bold">
           <button
             type="button"
@@ -118,7 +118,6 @@ export default function PaymentModal({
           </button>
         </div>
 
-        {/* Opsi Bagi Rata */}
         {paymentMode === 'SPLIT_EQUAL' && (
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-xs">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -144,13 +143,21 @@ export default function PaymentModal({
                 ))}
               </div>
             </div>
-            <p className="text-[10px] text-slate-500 text-right">
-              Tagihan per orang: <strong className="text-slate-900 font-mono">Rp {splitAmountPerPerson.toLocaleString('id-ID')}</strong>
-            </p>
+
+            <div className="border-t border-slate-200 pt-2 space-y-1 text-right">
+              <p className="text-[11px] text-slate-600">
+                Porsi bayar per orang: <strong className="text-slate-900 font-mono text-xs">Rp {splitAmountPerPerson.toLocaleString('id-ID')}</strong>
+              </p>
+              {remainder > 0 && (
+                <p className="text-[10px] text-amber-700 flex items-center justify-end gap-1 font-medium">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  Orang pertama bayar Rp {(baseAmountPerPerson + remainder).toLocaleString('id-ID')}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Opsi Split Item dengan Pemisah Kuantitas */}
         {paymentMode === 'SPLIT_ITEM' && (
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-xs max-h-48 overflow-y-auto">
             <span className="font-bold text-slate-700 block flex items-center gap-1.5">
@@ -185,7 +192,6 @@ export default function PaymentModal({
                     </div>
                   </div>
 
-                  {/* Pengatur Kuantitas (+) & (-) */}
                   <div className="flex items-center gap-1.5 shrink-0 ml-2">
                     <div className="flex items-center border border-slate-300 rounded-lg bg-white overflow-hidden shadow-2xs">
                       <button
@@ -215,10 +221,9 @@ export default function PaymentModal({
           </div>
         )}
 
-        {/* Box Ringkasan Total Tagihan & Input Pembayaran */}
         <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-3">
           <div className="flex justify-between items-center gap-2">
-            <span className="text-xs font-bold text-slate-500 shrink-0">Total Tagihan:</span>
+            <span className="text-xs font-bold text-slate-500 shrink-0">Total Tagihan Sesi Ini:</span>
             <span className="text-sm font-black font-mono text-blue-700 truncate">
               Rp {targetTotal.toLocaleString('id-ID')}
             </span>
@@ -253,7 +258,6 @@ export default function PaymentModal({
             />
           </div>
 
-          {/* Tombol Nominal Cepat */}
           <div className="flex flex-wrap justify-end gap-1.5 pt-1">
             {quickMoneyOptions.map((nominal, idx) => (
               <button
@@ -273,7 +277,6 @@ export default function PaymentModal({
           </div>
         </div>
 
-        {/* Action Button */}
         <button
           type="button"
           disabled={checkoutLoading || totalPaid < targetTotal || targetTotal === 0}

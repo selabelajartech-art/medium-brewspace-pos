@@ -31,7 +31,12 @@ export default function App() {
   const [showAdminStaffModal, setShowAdminStaffModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [showHppModal, setShowHppModal] = useState(false); // <-- State Modal HPP
+  const [showHppModal, setShowHppModal] = useState(false);
+  
+  // State PIN Auth Modal
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinSuccessCallback, setPinSuccessCallback] = useState(null);
+
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 
   const [editingProduct, setEditingProduct] = useState(null);
@@ -80,7 +85,7 @@ export default function App() {
     ? cartData.payments
     : [];
 
-  // Otorisasi PIN
+  // Otorisasi PIN Modern Tanpa prompt()
   const handleOpenProtectedIngredientModal = () => {
     const currentRole = master.activeCashier?.role;
 
@@ -89,23 +94,8 @@ export default function App() {
       return;
     }
 
-    const inputPin = prompt(
-      "Akses Terbatas!\nMasukkan PIN Manager/Admin untuk mengedit stok/bahan baku:",
-    );
-
-    if (!inputPin) return;
-
-    const isAuthorized = master.staffList.some(
-      (s) =>
-        (s.role === "MANAGER" || s.role === "ADMIN") &&
-        String(s.pin) === String(inputPin),
-    );
-
-    if (isAuthorized) {
-      setShowIngredientModal(true);
-    } else {
-      alert("PIN Salah! Akses ditolak.");
-    }
+    setPinSuccessCallback(() => () => setShowIngredientModal(true));
+    setShowPinModal(true);
   };
 
   // Filter Logic
@@ -257,6 +247,13 @@ export default function App() {
     targetTotal = cartData.grandTotal || 0,
     splitItemQtyMap = {},
   ) => {
+    // 1. Proteksi Jaringan Internet
+    if (!navigator.onLine) {
+      return alert(
+        "Koneksi Internet Terputus!\nMohon periksa sambungan Wi-Fi kafe terlebih dahulu sebelum memproses transaksi agar data tersimpan aman ke database cloud."
+      );
+    }
+
     if (cartList.length === 0) return alert("Keranjang kosong!");
     setCheckoutLoading(true);
 
@@ -468,7 +465,7 @@ export default function App() {
           setShowToppingModal={setShowToppingModal}
           setShowIngredientModal={handleOpenProtectedIngredientModal}
           setSelectedRecipeProduct={setSelectedRecipeProduct}
-          setShowHppModal={setShowHppModal} // <-- Oper prop di sini
+          setShowHppModal={setShowHppModal}
         />
       )}
 
@@ -508,8 +505,11 @@ export default function App() {
           setShowPaymentModal,
           showReceiptModal,
           setShowReceiptModal,
-          showHppModal, // <-- Masukkan ke modalState
-          setShowHppModal, // <-- Masukkan ke modalState
+          showHppModal,
+          setShowHppModal,
+          showPinModal,
+          setShowPinModal,
+          pinSuccessCallback,
           selectedOrderDetail,
           setSelectedOrderDetail,
           isMobileCartOpen,

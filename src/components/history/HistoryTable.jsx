@@ -7,7 +7,7 @@ export default function HistoryTable({
   setSelectedOrderDetail
 }) {
   return (
-    <div className="flex-1 p-5 overflow-y-auto bg-slate-50 space-y-4">
+    <div className="flex-1 p-5 overflow-y-auto bg-slate-50 space-y-4 pb-28 md:pb-8">
       <div className="flex justify-between items-center">
         <h3 className="font-extrabold text-sm text-slate-900">Riwayat Penjualan</h3>
         <input

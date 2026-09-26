@@ -86,7 +86,7 @@ export default function ReportsView({
   const cashierList = Object.values(cashierSalesMap)
 
   return (
-    <div className="flex-1 h-full min-h-0 p-4 sm:p-6 overflow-y-auto bg-slate-50 space-y-6">
+    <div className="flex-1 h-full min-h-0 p-4 sm:p-6 overflow-y-auto bg-slate-50 space-y-6 pb-28 md:pb-8">
       
       {/* HEADER & FILTER PERIODE WAKTU */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs">
@@ -205,7 +205,7 @@ export default function ReportsView({
       </div>
 
       {/* 2. ANALYTICS WIDGET GRID (2x2) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
         {/* WIDGET 1: TOP 5 PRODUK TERLARIS */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">

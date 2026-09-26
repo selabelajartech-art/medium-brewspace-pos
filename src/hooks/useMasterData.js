@@ -10,7 +10,7 @@ export function useMasterData() {
   const [ordersHistory, setOrdersHistory] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Default Staf Sesuaian (Bisa diubah default-nya langsung di sini)
+  // Default Staf
   const [staffList, setStaffList] = useState(() => {
     try {
       const saved = localStorage.getItem('medium_brew_staff_list')
@@ -23,7 +23,7 @@ export function useMasterData() {
     }
   })
   
-  const [activeCashier, setActiveCashier] = useState(staffList[0] || { name: 'Kasir' })
+  const [activeCashier, setActiveCashier] = useState(staffList[0] || { name: 'Kasir', role: 'CASHIER' })
 
   const [tablesList, setTablesList] = useState(() => {
     try {
@@ -74,7 +74,7 @@ export function useMasterData() {
     }
   })
 
-  // Simpan Otomatis ke LocalStorage jika ada perubahan di UI
+  // Sinkronisasi ke LocalStorage
   useEffect(() => { localStorage.setItem('medium_brew_staff_list', JSON.stringify(staffList)) }, [staffList])
   useEffect(() => { localStorage.setItem('medium_brew_tables_list', JSON.stringify(tablesList)) }, [tablesList])
   useEffect(() => { localStorage.setItem('medium_brew_toppings_list', JSON.stringify(toppingsList)) }, [toppingsList])
@@ -106,7 +106,7 @@ export function useMasterData() {
       if (ingRes.data && ingRes.data.length > 0) setIngredientsList(ingRes.data)
       if (recRes.data && recRes.data.length > 0) setProductRecipes(recRes.data)
     } catch (e) {
-      console.error(e)
+      console.error('Data Cloud Fetch Error:', e)
     } finally {
       setLoading(false)
     }
@@ -126,11 +126,10 @@ export function useMasterData() {
 
       if (data) setOrdersHistory(data)
     } catch (e) {
-      console.error(e)
+      console.error('History Fetch Error:', e)
     }
   }
 
-  // Fungsi Opsional: Reset LocalStorage ke Default Baru jika dibutuhkan
   const resetToDefaultStaff = () => {
     localStorage.removeItem('medium_brew_staff_list')
     setStaffList([
@@ -148,7 +147,7 @@ export function useMasterData() {
     loading,
     staffList: Array.isArray(staffList) ? staffList : [],
     setStaffList,
-    activeCashier: activeCashier || { name: 'Kasir' },
+    activeCashier: activeCashier || { name: 'Kasir', role: 'CASHIER' },
     setActiveCashier,
     tablesList: Array.isArray(tablesList) ? tablesList : [],
     setTablesList,
