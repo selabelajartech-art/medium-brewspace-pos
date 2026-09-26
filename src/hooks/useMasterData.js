@@ -10,20 +10,24 @@ export function useMasterData() {
   const [ordersHistory, setOrdersHistory] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Default Staf
+  // Data Staf dari Supabase (Profiles)
   const [staffList, setStaffList] = useState(() => {
     try {
       const saved = localStorage.getItem('medium_brew_staff_list')
-      return saved ? JSON.parse(saved) : [
-        { id: 'stf-1', name: 'Hafidz Salman', role: 'MANAGER', pin: '8888', initials: 'HS' },
-        { id: 'stf-2', name: 'Kasir Shift 1', role: 'CASHIER', pin: '1111', initials: 'K1' }
-      ]
+      return saved ? JSON.parse(saved) : []
     } catch (e) {
       return []
     }
   })
   
-  const [activeCashier, setActiveCashier] = useState(staffList[0] || { name: 'Kasir', role: 'CASHIER' })
+  const [activeCashier, setActiveCashier] = useState(() => {
+    try {
+      const saved = localStorage.getItem('medium_brew_active_cashier')
+      return saved ? JSON.parse(saved) : null
+    } catch (e) {
+      return null
+    }
+  })
 
   const [tablesList, setTablesList] = useState(() => {
     try {
@@ -54,12 +58,7 @@ export function useMasterData() {
   const [ingredientsList, setIngredientsList] = useState(() => {
     try {
       const saved = localStorage.getItem('medium_brew_ingredients_list')
-      return saved ? JSON.parse(saved) : [
-        { id: 'ing-1', name: 'Biji Kopi Houseblend', unit: 'Gram', current_stock: 5000, min_stock: 500, cost_per_unit: 180 },
-        { id: 'ing-2', name: 'Fresh Milk Pasteurised', unit: 'ML', current_stock: 10000, min_stock: 1000, cost_per_unit: 18 },
-        { id: 'ing-3', name: 'Sirup Gula Aren', unit: 'ML', current_stock: 3000, min_stock: 300, cost_per_unit: 25 },
-        { id: 'ing-4', name: 'Paper Cup 16oz', unit: 'Pcs', current_stock: 300, min_stock: 50, cost_per_unit: 450 }
-      ]
+      return saved ? JSON.parse(saved) : []
     } catch (e) {
       return []
     }
@@ -74,8 +73,13 @@ export function useMasterData() {
     }
   })
 
-  // Sinkronisasi ke LocalStorage
+  // Sinkronisasi ke LocalStorage (Caching Offline)
   useEffect(() => { localStorage.setItem('medium_brew_staff_list', JSON.stringify(staffList)) }, [staffList])
+  useEffect(() => { 
+    if (activeCashier) {
+      localStorage.setItem('medium_brew_active_cashier', JSON.stringify(activeCashier))
+    }
+  }, [activeCashier])
   useEffect(() => { localStorage.setItem('medium_brew_tables_list', JSON.stringify(tablesList)) }, [tablesList])
   useEffect(() => { localStorage.setItem('medium_brew_toppings_list', JSON.stringify(toppingsList)) }, [toppingsList])
   useEffect(() => { localStorage.setItem('medium_brew_ingredients_list', JSON.stringify(ingredientsList)) }, [ingredientsList])
@@ -84,11 +88,60 @@ export function useMasterData() {
   useEffect(() => {
     fetchInitialData()
     fetchHistory()
+
+    // Realtime Listener untuk Tabel Profiles
+    const profilesChannel = supabase
+      .channel('public:profiles')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        () => {
+          fetchProfiles()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(profilesChannel)
+    }
   }, [])
+
+  // Fungsi khusus mengambil data staf dari tabel profiles Supabase
+  const fetchProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('full_name')
+
+      if (data && data.length > 0) {
+        const formatted = data.map(p => ({
+          id: p.id,
+          name: p.name || p.full_name || 'Kasir',
+          role: (p.role || 'CASHIER').toUpperCase(),
+          pin: p.pin || '0000',
+          initials: p.initials || (p.name || p.full_name || 'K').substring(0, 2).toUpperCase()
+        }))
+
+        setStaffList(formatted)
+
+        // Perbarui activeCashier dengan data terbaru jika ada
+        setActiveCashier(prev => {
+          if (!prev) return formatted[0]
+          const updated = formatted.find(s => s.id === prev.id)
+          return updated || formatted[0]
+        })
+      }
+    } catch (e) {
+      console.error('Fetch Profiles Error:', e)
+    }
+  }
 
   const fetchInitialData = async () => {
     setLoading(true)
     try {
+      await fetchProfiles()
+
       const [prodRes, catRes, custRes, ingRes, recRes] = await Promise.all([
         supabase.from('products').select(`
           id, name, barcode, image_url, category_id,
@@ -131,11 +184,7 @@ export function useMasterData() {
   }
 
   const resetToDefaultStaff = () => {
-    localStorage.removeItem('medium_brew_staff_list')
-    setStaffList([
-      { id: 'stf-1', name: 'Hafidz Salman', role: 'MANAGER', pin: '8888', initials: 'HS' },
-      { id: 'stf-2', name: 'Kasir Shift 1', role: 'CASHIER', pin: '1111', initials: 'K1' }
-    ])
+    fetchProfiles()
   }
 
   return {
@@ -147,7 +196,7 @@ export function useMasterData() {
     loading,
     staffList: Array.isArray(staffList) ? staffList : [],
     setStaffList,
-    activeCashier: activeCashier || { name: 'Kasir', role: 'CASHIER' },
+    activeCashier: activeCashier || staffList[0] || { name: 'Kasir', role: 'CASHIER' },
     setActiveCashier,
     tablesList: Array.isArray(tablesList) ? tablesList : [],
     setTablesList,
