@@ -274,6 +274,42 @@ export default function App() {
     }
   };
 
+  // HANDLER HAPUS RIWAYAT TRANSAKSI
+  const handleDeleteOrder = async (orderId) => {
+    const currentRole = master.activeCashier?.role;
+
+    const executeDelete = async () => {
+      if (
+        !confirm(
+          "Apakah Anda yakin ingin menghapus riwayat transaksi ini? Data yang dihapus tidak dapat dikembalikan."
+        )
+      ) {
+        return;
+      }
+
+      try {
+        const { error } = await supabase.from("orders").delete().eq("id", orderId);
+        if (error) throw error;
+
+        if (master.fetchHistory) master.fetchHistory();
+        if (master.fetchInitialData) master.fetchInitialData();
+
+        playBeepSound();
+        showToast("Riwayat transaksi berhasil dihapus!", "success");
+        setSelectedOrderDetail(null);
+      } catch (err) {
+        showToast("Gagal menghapus transaksi: " + err.message, "error");
+      }
+    };
+
+    if (currentRole === "MANAGER" || currentRole === "ADMIN") {
+      executeDelete();
+    } else {
+      setPinSuccessCallback(() => executeDelete);
+      setShowPinModal(true);
+    }
+  };
+
   const handleOpenProductModal = (product = null) => {
     if (product) {
       const variant = product.product_variants?.[0];
@@ -633,6 +669,7 @@ export default function App() {
             historySearch={historySearch}
             setHistorySearch={setHistorySearch}
             setSelectedOrderDetail={setSelectedOrderDetail}
+            handleDeleteOrder={handleDeleteOrder}
           />
         )}
 
