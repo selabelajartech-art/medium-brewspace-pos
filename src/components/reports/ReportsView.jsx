@@ -84,22 +84,37 @@ export default function ReportsView({
   return (
     <div className="flex-1 h-full min-h-0 p-4 sm:p-6 overflow-y-auto bg-slate-50/50 space-y-6 pb-28 md:pb-8">
       
-      {/* Header & Filter Bar Terpadu */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        <div>
-          <h2 className="font-extrabold text-base text-slate-900">Dashboard Analisa Penjualan</h2>
-          <p className="text-xs text-slate-400 font-medium mt-0.5">Ringkasan performa finansial & operasional Medium Brew.</p>
+      {/* Header & Filter Bar Terpadu (Lega & Proporsional) */}
+      <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+        
+        {/* Row 1: Judul Dashboard & Tombol Ekspor */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="font-extrabold text-base sm:text-lg text-slate-900">Analisa Penjualan</h2>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">
+              Ringkasan performa finansial & operasional Medium Brew.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => exportToExcel(filteredHistory, startDate, endDate)}
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition active:scale-98 shrink-0 self-start sm:self-auto"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Ekspor Excel</span>
+          </button>
         </div>
 
-        {/* Control Toolbar */}
-        <div className="flex flex-wrap items-center gap-2.5 pt-2 xl:pt-0 border-t xl:border-t-0 border-slate-100">
+        {/* Row 2: Filter Preset & Range Tanggal (Lebih Panjang & Lapang) */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 pt-1 border-t border-slate-100">
           
-          {/* Preset Range Buttons */}
-          <div className="flex items-center bg-slate-100/80 p-1 rounded-2xl border border-slate-200/60 text-xs font-bold text-slate-600">
+          {/* Preset Buttons Group (Pill Lega dengan Padding Lebih Empuk) */}
+          <div className="grid grid-cols-3 md:flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 text-xs font-bold text-slate-600 shrink-0">
             <button
               type="button"
               onClick={() => applyDatePreset('today')}
-              className={`px-3 py-1.5 rounded-xl transition ${
+              className={`px-4 py-2 rounded-xl transition text-center whitespace-nowrap text-xs ${
                 filterPreset === 'today'
                   ? 'bg-blue-600 text-white shadow-2xs font-extrabold'
                   : 'hover:bg-slate-200/70 text-slate-600'
@@ -110,7 +125,7 @@ export default function ReportsView({
             <button
               type="button"
               onClick={() => applyDatePreset('7days')}
-              className={`px-3 py-1.5 rounded-xl transition ${
+              className={`px-4 py-2 rounded-xl transition text-center whitespace-nowrap text-xs ${
                 filterPreset === '7days'
                   ? 'bg-blue-600 text-white shadow-2xs font-extrabold'
                   : 'hover:bg-slate-200/70 text-slate-600'
@@ -121,7 +136,7 @@ export default function ReportsView({
             <button
               type="button"
               onClick={() => applyDatePreset('this_month')}
-              className={`px-3 py-1.5 rounded-xl transition ${
+              className={`px-4 py-2 rounded-xl transition text-center whitespace-nowrap text-xs ${
                 filterPreset === 'this_month'
                   ? 'bg-blue-600 text-white shadow-2xs font-extrabold'
                   : 'hover:bg-slate-200/70 text-slate-600'
@@ -131,32 +146,22 @@ export default function ReportsView({
             </button>
           </div>
 
-          {/* Date Picker Input Group */}
-          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/60 text-xs font-mono font-semibold">
+          {/* Date Picker Input Group (Expanded / Lebih Panjang) */}
+          <div className="flex items-center justify-between gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 text-xs font-mono font-semibold flex-1 max-w-md">
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-white border border-slate-200/80 rounded-xl px-2.5 py-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-xs cursor-pointer"
+              className="bg-white border border-slate-200/80 rounded-xl px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-xs font-mono font-bold cursor-pointer w-full text-center"
             />
-            <span className="text-slate-400 font-sans font-bold px-0.5">-</span>
+            <span className="text-slate-400 font-sans font-bold px-1 shrink-0">-</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-white border border-slate-200/80 rounded-xl px-2.5 py-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-xs cursor-pointer"
+              className="bg-white border border-slate-200/80 rounded-xl px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-xs font-mono font-bold cursor-pointer w-full text-center"
             />
           </div>
-
-          {/* Ekspor Excel CTA Button */}
-          <button
-            type="button"
-            onClick={() => exportToExcel(filteredHistory, startDate, endDate)}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-extrabold text-xs flex items-center gap-2 shadow-md shadow-blue-600/20 transition active:scale-98 shrink-0 ml-auto xl:ml-0"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Ekspor Excel</span>
-          </button>
 
         </div>
       </div>

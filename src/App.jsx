@@ -602,25 +602,28 @@ export default function App() {
               />
             </div>
 
-            <div className="lg:hidden fixed bottom-16 left-3 right-3 bg-slate-900 text-white p-3 rounded-2xl shadow-2xl flex items-center justify-between z-30">
-              <div>
-                <span className="text-[10px] text-slate-400 block">
-                  {cartList.reduce((a, b) => a + (b?.quantity || 0), 0)} Items Dipilih
-                </span>
-                <span className="font-bold text-xs text-blue-400 font-mono">
-                  Rp {(cartData.grandTotal || 0).toLocaleString("id-ID")}
-                </span>
+            {/* Bar Keranjang Melayang Mobile - Hanya Muncul Jika Ada Item Terpilih */}
+            {cartList.length > 0 && (
+              <div className="lg:hidden fixed bottom-20 left-3 right-3 bg-slate-900 text-white p-3 rounded-2xl shadow-2xl flex items-center justify-between z-30 transition-all duration-200">
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-medium">
+                    {cartList.reduce((a, b) => a + (b?.quantity || 0), 0)} Item Dipilih
+                  </span>
+                  <span className="font-bold text-xs text-blue-400 font-mono">
+                    Rp {(cartData.grandTotal || 0).toLocaleString("id-ID")}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    playBeepSound();
+                    setIsMobileCartOpen(true);
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-sm transition active:scale-95"
+                >
+                  <ShoppingCart className="w-4 h-4" /> Buka Order
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  playBeepSound();
-                  setIsMobileCartOpen(true);
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm"
-              >
-                <ShoppingCart className="w-4 h-4" /> Buka Order
-              </button>
-            </div>
+            )}
           </div>
         )}
 
