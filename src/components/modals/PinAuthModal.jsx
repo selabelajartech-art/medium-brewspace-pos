@@ -5,7 +5,7 @@ export default function PinAuthModal({
   onClose,
   onSuccess,
   staffList = [],
-  title = 'Otorisasi Manager Required',
+  title = 'Otorisasi PIN Required',
   description = 'Masukkan PIN Manager/Admin untuk melanjutkan.'
 }) {
   const [pin, setPin] = useState('')
@@ -32,22 +32,18 @@ export default function PinAuthModal({
     e?.preventDefault()
     if (!pin) return setErrorMsg('Masukkan PIN terlebih dahulu!')
 
-    // 1. Cek PIN ke daftar staf (dengan toleransi role huruf besar/kecil)
-    let authorizedStaff = staffList.find(
+    // Verifikasi PIN ke daftar staf Manager/Admin
+    const authorizedStaff = staffList.find(
       (s) =>
         (s.role?.toUpperCase() === 'MANAGER' || s.role?.toUpperCase() === 'ADMIN') &&
         String(s.pin) === String(pin)
     )
 
-    // 2. SAFEGUARD: PIN Darurat Fallback jika data staf belum termuat
-    if (!authorizedStaff && (pin === '1234' || pin === '8888')) {
-      authorizedStaff = { name: 'Emergency Admin', role: 'MANAGER' }
-    }
-
     if (authorizedStaff) {
       setPin('')
       setErrorMsg('')
-      // HANYA panggil onSuccess agar AdminStaffModal terbuka dan TIDAK langsung tertutup
+      // HANYA panggil onSuccess agar status isAuthenticated = true
+      // JANGAN panggil onClose() di sini agar modal utama tidak tertutup
       if (typeof onSuccess === 'function') {
         onSuccess(authorizedStaff)
       }
