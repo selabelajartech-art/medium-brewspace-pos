@@ -1,5 +1,6 @@
-import React from 'react'
-import { X, Printer, CheckCircle } from 'lucide-react'
+import React, { useState } from 'react'
+import { X, Printer, CheckCircle, Bluetooth, Loader2 } from 'lucide-react'
+import { printDirectBluetooth } from '../../utils/bluetoothPrinter'
 
 export default function ReceiptModal({
   setShowReceiptModal,
@@ -7,12 +8,24 @@ export default function ReceiptModal({
   selectedOrderDetail,
   lastTransaction
 }) {
+  const [isPrintingBt, setIsPrintingBt] = useState(false)
   const transactionData = selectedOrderDetail || lastTransaction
 
   if (!transactionData) return null
 
-  const handlePrint = () => {
+  const handlePrintOS = () => {
     window.print()
+  }
+
+  const handlePrintBluetooth = async () => {
+    try {
+      setIsPrintingBt(true)
+      await printDirectBluetooth(transactionData)
+    } catch (err) {
+      alert('Gagal mencetak via Bluetooth: ' + err.message)
+    } finally {
+      setIsPrintingBt(false)
+    }
   }
 
   const handleClose = () => {
@@ -21,9 +34,12 @@ export default function ReceiptModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
-      
-      {/* CSS KHUSUS PRINTER THERMAL (58mm / 80mm) */}
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose()
+      }}
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto"
+    >
       <style>{`
         @media print {
           body * {
@@ -53,21 +69,25 @@ export default function ReceiptModal({
         }
       `}</style>
 
-      <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl relative border border-slate-200 space-y-4 my-auto">
+      <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-sm shadow-2xl relative border border-slate-200 space-y-4 my-auto">
         
-        {/* Modal Action Header (Sembunyi saat dicetak) */}
+        {/* Modal Action Header */}
         <div className="flex justify-between items-center border-b border-slate-100 pb-3 no-print">
           <div className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-emerald-600" />
+            <CheckCircle className="w-5 h-5 text-blue-600" />
             <h3 className="font-extrabold text-sm text-slate-900">Struk Transaksi</h3>
           </div>
-          <button onClick={handleClose} className="text-slate-400 hover:text-slate-600 p-1">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* AREA STRUK TERMAL (DICETAK PRESISI KERTAS KASIR) */}
-        <div id="thermal-receipt-printable" className="bg-slate-50 border border-dashed border-slate-300 p-4 rounded-xl space-y-3 font-mono text-xs">
+        {/* AREA STRUK TERMAL */}
+        <div id="thermal-receipt-printable" className="bg-slate-50 border border-dashed border-slate-300 p-4 rounded-2xl space-y-3 font-mono text-xs">
           
           {/* Header Kafe */}
           <div className="text-center space-y-1">
@@ -143,20 +163,44 @@ export default function ReceiptModal({
           </div>
         </div>
 
-        {/* Tombol Aksi (Sembunyi saat dicetak) */}
-        <div className="flex gap-2 no-print">
+        {/* Tombol Aksi */}
+        <div className="space-y-2 no-print">
           <button
-            onClick={handlePrint}
-            className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition"
+            type="button"
+            onClick={handlePrintBluetooth}
+            disabled={isPrintingBt}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition active:scale-98 disabled:opacity-50"
           >
-            <Printer className="w-4 h-4" /> Cetak Struk
+            {isPrintingBt ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Mencetak ke Bluetooth...</span>
+              </>
+            ) : (
+              <>
+                <Bluetooth className="w-4 h-4" />
+                <span>Cetak Direct Bluetooth</span>
+              </>
+            )}
           </button>
-          <button
-            onClick={handleClose}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
-          >
-            Tutup
-          </button>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handlePrintOS}
+              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+            >
+              <Printer className="w-3.5 h-3.5 text-slate-500" />
+              <span>Cetak Sistem (OS)</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
+            >
+              Tutup
+            </button>
+          </div>
         </div>
 
       </div>

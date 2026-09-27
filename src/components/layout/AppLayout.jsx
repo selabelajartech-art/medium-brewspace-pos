@@ -14,14 +14,15 @@ export default function AppLayout({
   showShiftDropdown,
   setShowShiftDropdown,
   setShowAdminStaffModal,
+  setShowShiftClosingModal, // <-- Diterima dari App.jsx
   searchQuery,
   setSearchQuery
 }) {
   return (
     <div className="h-screen w-screen bg-slate-100 sm:p-4 font-sans text-slate-800 antialiased select-none flex items-center justify-center overflow-hidden">
-      <div className="w-full h-full sm:h-[92vh] sm:max-w-7xl bg-white sm:rounded-2xl shadow-xl flex flex-col lg:flex-row overflow-hidden border-0 sm:border sm:border-slate-200">
+      <div className="w-full h-full sm:h-[94vh] sm:max-w-7xl bg-white sm:rounded-3xl shadow-2xl flex flex-col lg:flex-row overflow-hidden border-0 sm:border sm:border-slate-200/80">
         
-        {/* Navigasi Desktop */}
+        {/* Sidebar Navigasi Kiri */}
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -33,7 +34,7 @@ export default function AppLayout({
           setActiveCashier={setActiveCashier}
         />
 
-        {/* Content View Area */}
+        {/* Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden bg-white h-full min-h-0">
           <Header
             activeCashier={activeCashier}
@@ -42,13 +43,14 @@ export default function AppLayout({
             setShowAdminStaffModal={setShowAdminStaffModal}
             showShiftDropdown={showShiftDropdown}
             setShowShiftDropdown={setShowShiftDropdown}
+            setShowShiftClosingModal={setShowShiftClosingModal} // <-- Diteruskan ke Header
           />
 
           <div className="flex-1 flex overflow-hidden min-h-0 relative">
             {children}
           </div>
 
-          {/* Navigasi Mobile Gadget */}
+          {/* Bottom Nav Mobile */}
           <MobileBottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
       </div>

@@ -14,7 +14,6 @@ export default function AdminStaffModal({
   const [staffForm, setStaffForm] = useState({ id: null, name: '', role: 'CASHIER', pin: '' })
   const [loading, setLoading] = useState(false)
 
-  // Tampilkan Numpad PIN jika belum terverifikasi
   if (!isAuthenticated) {
     return (
       <PinAuthModal
@@ -38,7 +37,6 @@ export default function AdminStaffModal({
     setLoading(true)
     try {
       if (staffForm.id) {
-        // Update ke Supabase
         const { error } = await supabase
           .from('profiles')
           .update({
@@ -75,7 +73,6 @@ export default function AdminStaffModal({
           })
         }
       } else {
-        // Insert baru ke Supabase
         const { data, error } = await supabase
           .from('profiles')
           .insert([
@@ -156,31 +153,31 @@ export default function AdminStaffModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl relative border border-slate-200">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl relative border border-slate-200 space-y-4 my-auto">
         <button
           onClick={() => {
             setShowAdminStaffModal(false)
             setStaffForm({ id: null, name: '', role: 'CASHIER', pin: '' })
           }}
-          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header Modal */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl border border-blue-200/60">
             <Shield className="w-5 h-5" />
           </div>
           <div>
             <h3 className="font-extrabold text-sm text-slate-900">Admin System: Kelola Tim Kasir</h3>
-            <p className="text-[11px] text-slate-500">Atur hak akses role & PIN otorisasi staf.</p>
+            <p className="text-[11px] text-slate-400 font-medium">Atur hak akses role & PIN otorisasi staf.</p>
           </div>
         </div>
 
         {/* Form Tambah/Edit Staff */}
-        <form onSubmit={handleSaveStaff} className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5 text-xs mb-4">
+        <form onSubmit={handleSaveStaff} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2.5 text-xs">
           <h4 className="font-bold text-slate-800">{staffForm.id ? 'Edit Data Staff' : 'Tambah Staff Baru'}</h4>
           
           <input
@@ -188,7 +185,7 @@ export default function AdminStaffModal({
             placeholder="Nama Kasir / Barista"
             value={staffForm.name}
             onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
-            className="w-full p-2 bg-white border border-slate-200 rounded-lg font-medium"
+            className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
             required
             disabled={loading}
           />
@@ -197,7 +194,7 @@ export default function AdminStaffModal({
             <select
               value={staffForm.role}
               onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })}
-              className="col-span-2 p-2 bg-white border border-slate-200 rounded-lg font-medium text-slate-800"
+              className="col-span-2 p-2.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
               disabled={loading}
             >
               <option value="CASHIER">Kasir (CASHIER)</option>
@@ -211,7 +208,7 @@ export default function AdminStaffModal({
               placeholder="PIN (4 Digit)"
               value={staffForm.pin}
               onChange={(e) => setStaffForm({ ...staffForm, pin: e.target.value })}
-              className="p-2 bg-white border border-slate-200 rounded-lg font-mono font-bold text-center"
+              className="p-2.5 bg-white border border-slate-200 rounded-xl font-mono font-bold text-center focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
               required
               disabled={loading}
             />
@@ -221,7 +218,7 @@ export default function AdminStaffModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300"
+              className="flex-1 py-2.5 bg-blue-600 text-white font-extrabold rounded-xl hover:bg-blue-700 transition shadow-sm disabled:bg-slate-200"
             >
               {loading ? 'Menyimpan...' : staffForm.id ? 'Simpan Perubahan' : '+ Tambah Staf'}
             </button>
@@ -229,7 +226,7 @@ export default function AdminStaffModal({
               <button
                 type="button"
                 onClick={() => setStaffForm({ id: null, name: '', role: 'CASHIER', pin: '' })}
-                className="px-3 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg"
+                className="px-3.5 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl"
                 disabled={loading}
               >
                 Batal
@@ -240,23 +237,23 @@ export default function AdminStaffModal({
 
         {/* Daftar Staff */}
         <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-          <h4 className="font-bold text-xs text-slate-700">Daftar Tim Terdaftar ({staffList.length})</h4>
+          <h4 className="font-extrabold text-[10px] text-slate-400 uppercase tracking-wider">Daftar Tim Terdaftar ({staffList.length})</h4>
           {staffList.map((stf) => {
             const isActive = activeCashier?.id === stf.id
             const isManagerOrAdmin = stf.role === 'ADMIN' || stf.role === 'MANAGER'
 
             return (
-              <div key={stf.id} className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-xl shadow-2xs">
+              <div key={stf.id} className="flex items-center justify-between p-2.5 bg-white border border-slate-200/80 rounded-2xl shadow-2xs">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 font-extrabold text-xs flex items-center justify-center border border-slate-200 shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-800 font-extrabold text-xs flex items-center justify-center border border-slate-200 shrink-0">
                     {stf.initials}
                   </div>
                   <div className="min-w-0">
                     <h5 className="font-bold text-xs text-slate-900 leading-tight truncate">{stf.name}</h5>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${
+                      <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black ${
                         isManagerOrAdmin
-                          ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
                           : 'bg-slate-100 text-slate-600'
                       }`}>
                         {stf.role || 'CASHIER'}
@@ -273,10 +270,10 @@ export default function AdminStaffModal({
                       setShowAdminStaffModal(false)
                     }}
                     disabled={isActive || loading}
-                    className={`px-2 py-1 rounded text-[10px] font-bold transition ${
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition ${
                       isActive
                         ? 'bg-slate-100 text-slate-400 cursor-default'
-                        : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold'
                     }`}
                   >
                     {isActive ? 'Aktif' : 'Aktifkan'}
@@ -284,14 +281,14 @@ export default function AdminStaffModal({
                   <button
                     onClick={() => setStaffForm({ id: stf.id, name: stf.name, role: stf.role || 'CASHIER', pin: stf.pin || '' })}
                     disabled={loading}
-                    className="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-slate-100 transition"
+                    className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition"
                   >
                     <Edit className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDeleteStaff(stf.id)}
                     disabled={loading}
-                    className="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-slate-100 transition"
+                    className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-slate-100 transition"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

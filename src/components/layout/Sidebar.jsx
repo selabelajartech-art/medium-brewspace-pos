@@ -4,121 +4,65 @@ import { Coffee, LayoutGrid, History, Package, BarChart2, Users } from 'lucide-r
 export default function Sidebar({
   activeTab,
   setActiveTab,
-  setShowAdminStaffModal,
-  activeCashier,
-  showShiftDropdown,
-  setShowShiftDropdown,
-  staffList = [],
-  setActiveCashier
+  setShowAdminStaffModal
 }) {
-  const cashierInitials = activeCashier?.initials || 'KS'
+  const navItems = [
+    { id: 'pos', label: 'Kasir (POS)', icon: LayoutGrid },
+    { id: 'history', label: 'Riwayat Order', icon: History },
+    { id: 'inventory', label: 'Kelola Menu', icon: Package },
+    { id: 'reports', label: 'Laporan Keuangan', icon: BarChart2 }
+  ]
 
   return (
-    <aside className="hidden md:flex flex-col justify-between w-16 bg-slate-900 border-r border-slate-800 py-4 items-center z-10 shrink-0">
-      <div className="space-y-6 flex flex-col items-center w-full">
-        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-600/30">
-          <Coffee className="w-5 h-5" />
+    <aside className="hidden lg:flex flex-col justify-between w-60 bg-white border-r border-slate-200/80 p-5 shrink-0 z-20">
+      <div className="space-y-8">
+        {/* Brand Header */}
+        <div className="flex items-center gap-3 px-1">
+          <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20 shrink-0">
+            <Coffee className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="font-black text-slate-900 text-base leading-tight">MedPOS</h1>
+            <p className="text-[11px] font-semibold text-blue-600">POS & Cafe System</p>
+          </div>
         </div>
 
-        <nav className="flex flex-col gap-2 w-full px-2">
-          <button
-            onClick={() => setActiveTab('pos')}
-            title="POS Register"
-            className={`w-12 h-12 rounded-xl flex items-center justify-center transition ${
-              activeTab === 'pos'
-                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <LayoutGrid className="w-5 h-5" />
-          </button>
+        {/* Navigation Links */}
+        <nav className="space-y-1.5">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const isActive = activeTab === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-xs transition-all ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-600 shadow-xs'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
 
+          {/* Tombol Kelola Tim Staf */}
           <button
-            onClick={() => setActiveTab('history')}
-            title="Riwayat Order"
-            className={`w-12 h-12 rounded-xl flex items-center justify-center transition ${
-              activeTab === 'history'
-                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
+            onClick={() => setShowAdminStaffModal?.(true)}
+            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-xs text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all"
           >
-            <History className="w-5 h-5" />
-          </button>
-
-          <button
-            onClick={() => setActiveTab('inventory')}
-            title="Kelola Menu"
-            className={`w-12 h-12 rounded-xl flex items-center justify-center transition ${
-              activeTab === 'inventory'
-                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Package className="w-5 h-5" />
-          </button>
-
-          <button
-            onClick={() => setActiveTab('reports')}
-            title="Perekapan Laporan Keuangan"
-            className={`w-12 h-12 rounded-xl flex items-center justify-center transition ${
-              activeTab === 'reports'
-                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <BarChart2 className="w-5 h-5" />
+            <Users className="w-4 h-4 text-slate-400" />
+            <span>Kelola Tim Kasir</span>
           </button>
         </nav>
       </div>
 
-      <div className="flex flex-col gap-2 items-center">
-        <button
-          onClick={() => setShowAdminStaffModal?.(true)}
-          title="Admin System: Kelola Tim Kasir"
-          className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition"
-        >
-          <Users className="w-4 h-4" />
-        </button>
-
-        <div className="relative">
-          <button
-            onClick={() => setShowShiftDropdown?.(!showShiftDropdown)}
-            className="w-10 h-10 rounded-xl bg-blue-600 border border-blue-500 text-white font-extrabold text-xs flex items-center justify-center hover:bg-blue-700 transition"
-          >
-            {cashierInitials}
-          </button>
-
-          {showShiftDropdown && (
-            <div className="absolute left-14 bottom-0 w-60 bg-white border border-slate-200 rounded-xl shadow-xl p-2 z-50">
-              <div className="px-3 py-1.5 border-b border-slate-100 flex justify-between items-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Ganti Kasir / Shift</span>
-                <button onClick={() => { setShowShiftDropdown?.(false); setShowAdminStaffModal?.(true); }} className="text-[10px] font-bold text-blue-600 hover:underline">
-                  Kelola Tim
-                </button>
-              </div>
-              {staffList.map((stf) => (
-                <button
-                  key={stf.id}
-                  onClick={() => {
-                    setActiveCashier?.(stf)
-                    setShowShiftDropdown?.(false)
-                  }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition ${
-                    activeCashier?.id === stf.id ? 'bg-blue-50 text-blue-700 font-bold' : 'hover:bg-slate-50 text-slate-700'
-                  }`}
-                >
-                  <div className="w-6 h-6 rounded bg-slate-200 text-slate-700 font-bold text-[10px] flex items-center justify-center">
-                    {stf.initials}
-                  </div>
-                  <div className="text-left">
-                    <p className="leading-tight">{stf.name}</p>
-                    <p className="text-[9px] text-slate-400 font-normal">{stf.role}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Footer Minimalis Sederhana */}
+      <div className="pt-4 border-t border-slate-100 px-1">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Sistem</p>
+        <p className="text-[11px] font-extrabold text-slate-700 font-mono mt-0.5">v2.4 • Ready</p>
       </div>
     </aside>
   )

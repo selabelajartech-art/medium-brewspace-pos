@@ -10,7 +10,8 @@ import ReceiptModal from './ReceiptModal'
 import AdminStaffModal from './AdminStaffModal'
 import OrderRegisterPane from '../pos/OrderRegisterPane'
 import HppCalculatorModal from './HppCalculatorModal'
-import PinAuthModal from './PinAuthModal' // <-- Import Baru
+import PinAuthModal from './PinAuthModal'
+import ShiftClosingModal from './ShiftClosingModal'
 import { X } from 'lucide-react'
 
 export default function ModalContainer({ modalState = {} }) {
@@ -25,13 +26,15 @@ export default function ModalContainer({ modalState = {} }) {
     showPaymentModal, setShowPaymentModal,
     showReceiptModal, setShowReceiptModal,
     showHppModal, setShowHppModal,
-    showPinModal, setShowPinModal, pinSuccessCallback, // <-- Prop Baru
+    showPinModal, setShowPinModal, pinSuccessCallback,
+    showShiftClosingModal, setShowShiftClosingModal,
     selectedOrderDetail, setSelectedOrderDetail,
     isMobileCartOpen, setIsMobileCartOpen,
     
     // Data Handlers & Lists
     categories = [], toppingsList = [], setToppingsList, ingredientsList = [], setIngredientsList,
     productRecipes = [], setProductRecipes, tablesList = [], setTablesList, staffList = [], setStaffList, activeCashier, setActiveCashier,
+    ordersHistory = [],
     editingProduct, setEditingProduct, productForm, setProductForm, handleSaveProduct,
     handleSaveIngredient, handleDeleteIngredient, handleSaveRecipe, handleDeleteRecipeItem,
     handleAddToCartWithCustomization,
@@ -180,6 +183,19 @@ export default function ModalContainer({ modalState = {} }) {
             if (typeof pinSuccessCallback === 'function') pinSuccessCallback()
           }}
           staffList={staffList}
+        />
+      )}
+
+      {/* MODAL REKAPITULASI CLOSING SHIFT */}
+      {showShiftClosingModal && (
+        <ShiftClosingModal
+          onClose={() => setShowShiftClosingModal?.(false)}
+          activeCashier={activeCashier}
+          ordersHistory={ordersHistory}
+          onFinishShift={() => {
+            setShowShiftClosingModal?.(false)
+            if (typeof setShowAdminStaffModal === 'function') setShowAdminStaffModal(true)
+          }}
         />
       )}
     </>

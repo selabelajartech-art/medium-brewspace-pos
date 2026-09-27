@@ -38,7 +38,6 @@ export default function PaymentModal({
   const totalPaid = safePayments.reduce((sum, p) => sum + (parseFloat(p?.amount) || 0), 0)
   const changeAmount = Math.max(0, totalPaid - targetTotal)
 
-  // FIX: Mengeluarkan setPayments dari updater callback internal agar tidak memicu re-render conflict
   const updateSplitQty = (cartKey, maxQty, delta) => {
     const current = splitItemQtyMap[cartKey] || 0
     const next = Math.max(0, Math.min(maxQty, current + delta))
@@ -66,33 +65,37 @@ export default function PaymentModal({
   const quickMoneyOptions = Array.from(new Set([targetTotal, 20000, 50000, 100000])).filter(Boolean)
 
   return (
-    // FIX: Klik di luar window (overlay) akan menutup modal
     <div
       onClick={(e) => {
         if (e.target === e.currentTarget) setShowPaymentModal?.(false)
       }}
       className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto print:hidden"
     >
-      <div className="bg-white rounded-2xl p-4 sm:p-5 w-full max-w-md shadow-2xl relative border border-slate-200 space-y-4 my-auto">
+      <div className="bg-white rounded-3xl p-4 sm:p-6 w-full max-w-md shadow-2xl relative border border-slate-200 space-y-4 my-auto">
         
+        {/* Header Modal */}
         <div className="flex justify-between items-center border-b border-slate-100 pb-3">
           <div>
-            <h3 className="font-extrabold text-sm text-slate-900">Proses Pembayaran</h3>
-            <p className="text-[11px] text-slate-500">Pilih metode bayar atau pisah tagihan.</p>
+            <h3 className="font-extrabold text-base text-slate-900">Proses Pembayaran</h3>
+            <p className="text-[11px] text-slate-400 font-medium">Pilih metode bayar atau pisah tagihan.</p>
           </div>
-          <button onClick={() => setShowPaymentModal?.(false)} className="text-slate-400 hover:text-slate-600 p-1">
+          <button 
+            onClick={() => setShowPaymentModal?.(false)} 
+            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl text-[11px] font-bold">
+        {/* Tab Opsi Bayar / Split Bill */}
+        <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl text-xs font-bold">
           <button
             type="button"
             onClick={() => {
               setPaymentMode('FULL')
               if (typeof setPayments === 'function') setPayments([{ method: 'CASH', amount: (grandTotal || 0).toString() }])
             }}
-            className={`py-2 rounded-lg transition ${paymentMode === 'FULL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'}`}
+            className={`py-2 rounded-lg transition ${paymentMode === 'FULL' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
             Penuh
           </button>
@@ -102,7 +105,7 @@ export default function PaymentModal({
               setPaymentMode('SPLIT_EQUAL')
               if (typeof setPayments === 'function') setPayments([{ method: 'CASH', amount: splitAmountPerPerson.toString() }])
             }}
-            className={`py-2 rounded-lg transition ${paymentMode === 'SPLIT_EQUAL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'}`}
+            className={`py-2 rounded-lg transition ${paymentMode === 'SPLIT_EQUAL' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
             Bagi Rata
           </button>
@@ -112,16 +115,17 @@ export default function PaymentModal({
               setPaymentMode('SPLIT_ITEM')
               if (typeof setPayments === 'function') setPayments([{ method: 'CASH', amount: '0' }])
             }}
-            className={`py-2 rounded-lg transition ${paymentMode === 'SPLIT_ITEM' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'}`}
+            className={`py-2 rounded-lg transition ${paymentMode === 'SPLIT_ITEM' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
             Pilih Menu
           </button>
         </div>
 
+        {/* Opsi Bagi Rata */}
         {paymentMode === 'SPLIT_EQUAL' && (
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-xs">
+          <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-200/60 space-y-2 text-xs">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <span className="font-bold text-slate-700 flex items-center gap-1.5">
+              <span className="font-bold text-slate-800 flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-blue-600" /> Jumlah Orang:
               </span>
               <div className="flex items-center gap-1.5 w-full sm:w-auto">
@@ -134,8 +138,10 @@ export default function PaymentModal({
                       const amt = Math.ceil((grandTotal || 0) / num)
                       if (typeof setPayments === 'function') setPayments([{ method: safePayments[0]?.method || 'CASH', amount: amt.toString() }])
                     }}
-                    className={`flex-1 sm:flex-initial px-2.5 py-1 rounded-lg font-bold text-xs border transition ${
-                      splitPeople === num ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'
+                    className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-xl font-bold text-xs border transition ${
+                      splitPeople === num 
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' 
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                     }`}
                   >
                     {num}P
@@ -144,9 +150,9 @@ export default function PaymentModal({
               </div>
             </div>
 
-            <div className="border-t border-slate-200 pt-2 space-y-1 text-right">
+            <div className="border-t border-blue-200/60 pt-2 space-y-1 text-right">
               <p className="text-[11px] text-slate-600">
-                Porsi bayar per orang: <strong className="text-slate-900 font-mono text-xs">Rp {splitAmountPerPerson.toLocaleString('id-ID')}</strong>
+                Porsi bayar per orang: <strong className="text-blue-700 font-mono text-xs">Rp {splitAmountPerPerson.toLocaleString('id-ID')}</strong>
               </p>
               {remainder > 0 && (
                 <p className="text-[10px] text-amber-700 flex items-center justify-end gap-1 font-medium">
@@ -158,9 +164,10 @@ export default function PaymentModal({
           </div>
         )}
 
+        {/* Opsi Pilih Menu */}
         {paymentMode === 'SPLIT_ITEM' && (
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-xs max-h-48 overflow-y-auto">
-            <span className="font-bold text-slate-700 block flex items-center gap-1.5">
+          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2 text-xs max-h-48 overflow-y-auto">
+            <span className="font-bold text-slate-700 block flex items-center gap-1.5 mb-1">
               <ShoppingBag className="w-4 h-4 text-blue-600" /> Atur porsi dibayar sesi ini:
             </span>
             {safeCart.map((item) => {
@@ -172,7 +179,7 @@ export default function PaymentModal({
                 <div
                   key={item.cartKey || item.id}
                   className={`p-2.5 rounded-xl border flex justify-between items-center transition ${
-                    isSelected ? 'bg-blue-50/80 border-blue-400' : 'bg-white border-slate-200'
+                    isSelected ? 'bg-blue-50/90 border-blue-400' : 'bg-white border-slate-200'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -182,7 +189,7 @@ export default function PaymentModal({
                       onChange={(e) => {
                         updateSplitQty(item.cartKey, item.quantity || 1, e.target.checked ? (item.quantity || 1) : -qtyToPay)
                       }}
-                      className="rounded w-4 h-4 text-blue-600 cursor-pointer shrink-0"
+                      className="rounded w-4 h-4 text-blue-600 cursor-pointer shrink-0 accent-blue-600"
                     />
                     <div className="min-w-0">
                       <p className="font-bold text-xs text-slate-900 truncate">{item.name}</p>
@@ -221,10 +228,11 @@ export default function PaymentModal({
           </div>
         )}
 
-        <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-3">
+        {/* Input Pembayaran */}
+        <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl space-y-3">
           <div className="flex justify-between items-center gap-2">
             <span className="text-xs font-bold text-slate-500 shrink-0">Total Tagihan Sesi Ini:</span>
-            <span className="text-sm font-black font-mono text-blue-700 truncate">
+            <span className="text-base font-black font-mono text-blue-600 truncate">
               Rp {targetTotal.toLocaleString('id-ID')}
             </span>
           </div>
@@ -237,7 +245,7 @@ export default function PaymentModal({
                   setPayments([{ ...(safePayments[0] || {}), method: e.target.value }])
                 }
               }}
-              className="w-full sm:w-1/2 bg-white text-slate-800 text-xs p-2.5 rounded-xl font-bold border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+              className="w-full sm:w-1/2 bg-white text-slate-800 text-xs p-2.5 rounded-xl font-bold border border-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:outline-none transition"
             >
               <option value="CASH">Tunai</option>
               <option value="QRIS">QRIS / E-Wallet</option>
@@ -254,29 +262,32 @@ export default function PaymentModal({
                 }
               }}
               placeholder="0"
-              className="w-full sm:w-1/2 bg-white text-slate-900 font-mono font-bold text-sm p-2.5 rounded-xl text-right border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+              className="w-full sm:w-1/2 bg-white text-slate-900 font-mono font-bold text-sm p-2.5 rounded-xl text-right border border-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:outline-none transition"
             />
           </div>
 
+          {/* Uang Pas / Tombol Cepat */}
           <div className="flex flex-wrap justify-end gap-1.5 pt-1">
             {quickMoneyOptions.map((nominal, idx) => (
               <button
                 key={`btn-quick-${nominal}-${idx}`}
                 type="button"
                 onClick={() => handleQuickMoney(nominal)}
-                className="px-2.5 py-1 bg-white hover:bg-slate-100 text-[10px] font-mono text-slate-700 rounded-lg border border-slate-200 font-bold transition"
+                className="px-2.5 py-1 bg-white hover:bg-slate-100 text-[10px] font-mono text-slate-700 rounded-lg border border-slate-200 font-bold transition shadow-2xs"
               >
                 Rp {nominal.toLocaleString('id-ID')}
               </button>
             ))}
           </div>
 
+          {/* Kembalian */}
           <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-xs font-bold text-emerald-700">
             <span>Kembalian</span>
             <span className="font-mono text-sm font-black">Rp {changeAmount.toLocaleString('id-ID')}</span>
           </div>
         </div>
 
+        {/* Tombol Selesaikan Transaksi */}
         <button
           type="button"
           disabled={checkoutLoading || totalPaid < targetTotal || targetTotal === 0}
@@ -285,9 +296,9 @@ export default function PaymentModal({
               handleCheckout(paymentMode, targetTotal, splitItemQtyMap)
             }
           }}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition shadow-md flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-400"
+          className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs transition shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-400 active:scale-98"
         >
-          {checkoutLoading ? 'Memproses Transaksi...' : <><Check className="w-4 h-4" /> Selesaikan Transaksi</>}
+          {checkoutLoading ? 'Memproses Transaksi...' : <><Check className="w-4 h-4 stroke-[3]" /> Selesaikan Transaksi</>}
         </button>
 
       </div>
