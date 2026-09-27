@@ -1,308 +1,235 @@
-import React, { useState } from 'react'
-import { X, Shield, Edit, Trash2 } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
-import PinAuthModal from './PinAuthModal'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
-export default function AdminStaffModal({
-  setShowAdminStaffModal,
-  staffList = [],
-  setStaffList,
-  setActiveCashier,
-  activeCashier
-}) {
-  // State Otorisasi PIN Manager
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [staffForm, setStaffForm] = useState({ id: null, name: '', role: 'CASHIER', pin: '' })
-  const [loading, setLoading] = useState(false)
+const CURRENT_STORE_ID = 'a0000000-0000-0000-0000-000000000001'
 
-  // 1. Pintu Gerbang Keamanan: Jika belum terverifikasi PIN Manager, tampilkan Numpad PIN terlebih dahulu
-  if (!isAuthenticated) {
-    return (
-      <PinAuthModal
-        onClose={() => setShowAdminStaffModal(false)}
-        onSuccess={() => setIsAuthenticated(true)}
-        staffList={staffList}
-        title="Otorisasi Manager Required"
-        description="Masukkan PIN Manager/Admin untuk mengelola data & PIN tim kasir."
-      />
-    )
-  }
+const DEFAULT_STAFF = [
+  { id: 'stf-1', name: 'Hafidz Salman', role: 'MANAGER', pin: '1234', initials: 'HS' },
+  { id: 'stf-2', name: 'Kasir Shift 1', role: 'CASHIER', pin: '0000', initials: 'K1' }
+]
 
-  const handleSaveStaff = async (e) => {
-    e.preventDefault()
-    if (!staffForm.name) return alert('Nama staff wajib diisi!')
-    if (!staffForm.pin || staffForm.pin.length < 4) return alert('PIN otorisasi (minimal 4 angka) wajib diisi!')
+export function useMasterData() {
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
+  const [customers, setCustomers] = useState([])
+  const [ordersHistory, setOrdersHistory] = useState([])
+  const [loading, setLoading] = useState(true)
 
-    const getInitials = (str) =>
-      str.trim().split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()
-
-    setLoading(true)
+  // Initial State dengan Fallback Default Staff jika LocalStorage Kosong
+  const [staffList, setStaffList] = useState(() => {
     try {
-      if (staffForm.id) {
-        // Update data ke Supabase
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            full_name: staffForm.name,
-            name: staffForm.name,
-            role: staffForm.role.toLowerCase(),
-            pin: staffForm.pin,
-            initials: getInitials(staffForm.name)
-          })
-          .eq('id', staffForm.id)
+      const saved = localStorage.getItem('medium_brew_staff_list')
+      const parsed = saved ? JSON.parse(saved) : []
+      return parsed.length > 0 ? parsed : DEFAULT_STAFF
+    } catch (e) {
+      return DEFAULT_STAFF
+    }
+  })
+  
+  const [activeCashier, setActiveCashier] = useState(() => {
+    try {
+      const saved = localStorage.getItem('medium_brew_active_cashier')
+      return saved ? JSON.parse(saved) : DEFAULT_STAFF[0]
+    } catch (e) {
+      return DEFAULT_STAFF[0]
+    }
+  })
 
-        if (error) throw error
+  const [tablesList, setTablesList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('medium_brew_tables_list')
+      return saved ? JSON.parse(saved) : [
+        { id: 'tbl-1', name: 'Meja 01 (Indoor)' },
+        { id: 'tbl-2', name: 'Meja 02 (Indoor)' },
+        { id: 'tbl-3', name: 'Quiet Zone 05' },
+        { id: 'tbl-4', name: 'Takeaway' }
+      ]
+    } catch (e) {
+      return []
+    }
+  })
 
-        const updated = staffList.map((s) =>
-          s.id === staffForm.id
-            ? {
-                ...s,
-                name: staffForm.name,
-                role: staffForm.role || 'CASHIER',
-                pin: staffForm.pin,
-                initials: getInitials(staffForm.name)
-              }
-            : s
-        )
-        setStaffList(updated)
+  const [toppingsList, setToppingsList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('medium_brew_toppings_list')
+      return saved ? JSON.parse(saved) : [
+        { id: 'top-1', name: 'Extra Shot Espresso', price: 5000, categoryType: 'drink' },
+        { id: 'top-2', name: 'Oat Milk / Plant-Based', price: 8000, categoryType: 'drink' }
+      ]
+    } catch (e) {
+      return []
+    }
+  })
 
-        if (activeCashier?.id === staffForm.id) {
-          setActiveCashier({
-            ...activeCashier,
-            name: staffForm.name,
-            role: staffForm.role || 'CASHIER',
-            pin: staffForm.pin,
-            initials: getInitials(staffForm.name)
-          })
+  const [ingredientsList, setIngredientsList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('medium_brew_ingredients_list')
+      return saved ? JSON.parse(saved) : []
+    } catch (e) {
+      return []
+    }
+  })
+
+  const [productRecipes, setProductRecipes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('medium_brew_product_recipes')
+      return saved ? JSON.parse(saved) : []
+    } catch (e) {
+      return []
+    }
+  })
+
+  // Sinkronisasi ke LocalStorage
+  useEffect(() => { 
+    if (staffList.length > 0) {
+      localStorage.setItem('medium_brew_staff_list', JSON.stringify(staffList)) 
+    }
+  }, [staffList])
+
+  useEffect(() => { 
+    if (activeCashier) {
+      localStorage.setItem('medium_brew_active_cashier', JSON.stringify(activeCashier))
+    }
+  }, [activeCashier])
+
+  useEffect(() => { localStorage.setItem('medium_brew_tables_list', JSON.stringify(tablesList)) }, [tablesList])
+  useEffect(() => { localStorage.setItem('medium_brew_toppings_list', JSON.stringify(toppingsList)) }, [toppingsList])
+  useEffect(() => { localStorage.setItem('medium_brew_ingredients_list', JSON.stringify(ingredientsList)) }, [ingredientsList])
+  useEffect(() => { localStorage.setItem('medium_brew_product_recipes', JSON.stringify(productRecipes)) }, [productRecipes])
+
+  useEffect(() => {
+    fetchInitialData()
+    fetchHistory()
+
+    // Realtime Listener untuk Tabel Profiles Supabase
+    const profilesChannel = supabase
+      .channel('public:profiles')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        () => {
+          fetchProfiles()
         }
-      } else {
-        // Tambah data baru ke Supabase
-        const { data, error } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              full_name: staffForm.name,
-              name: staffForm.name,
-              role: staffForm.role.toLowerCase(),
-              pin: staffForm.pin,
-              initials: getInitials(staffForm.name)
-            }
-          ])
-          .select()
+      )
+      .subscribe()
 
-        if (error) throw error
+    return () => {
+      supabase.removeChannel(profilesChannel)
+    }
+  }, [])
 
-        if (data && data[0]) {
-          const newStaff = {
-            id: data[0].id,
-            name: staffForm.name,
-            role: staffForm.role || 'CASHIER',
-            pin: staffForm.pin,
-            initials: getInitials(staffForm.name)
-          }
-          setStaffList([...staffList, newStaff])
-        }
+  // Fungsi khusus Ambil Data Staf Supabase dengan Proteksi Fallback
+  const fetchProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+
+      if (error) {
+        console.error('Fetch profiles error:', error)
       }
 
-      setStaffForm({ id: null, name: '', role: 'CASHIER', pin: '' })
-    } catch (err) {
-      console.error('Save Staff Error:', err)
-      alert('Gagal menyimpan ke database: ' + err.message)
+      if (data && data.length > 0) {
+        const formatted = data.map(p => ({
+          id: p.id,
+          name: p.name || p.full_name || 'Kasir',
+          role: (p.role || 'CASHIER').toUpperCase(),
+          pin: p.pin || '1234',
+          initials: p.initials || (p.name || p.full_name || 'K').substring(0, 2).toUpperCase()
+        }))
+
+        setStaffList(formatted)
+
+        setActiveCashier(prev => {
+          if (!prev) return formatted[0]
+          const updated = formatted.find(s => s.id === prev.id)
+          return updated || formatted[0]
+        })
+      } else {
+        // Jika database belum ada record, gunakan default Hafidz & Kasir
+        setStaffList(prev => (prev.length > 0 ? prev : DEFAULT_STAFF))
+        setActiveCashier(prev => prev || DEFAULT_STAFF[0])
+      }
+    } catch (e) {
+      console.error('Fetch Profiles Error:', e)
+      setStaffList(prev => (prev.length > 0 ? prev : DEFAULT_STAFF))
+      setActiveCashier(prev => prev || DEFAULT_STAFF[0])
+    }
+  }
+
+  const fetchInitialData = async () => {
+    setLoading(true)
+    try {
+      await fetchProfiles()
+
+      const [prodRes, catRes, custRes, ingRes, recRes] = await Promise.all([
+        supabase.from('products').select(`
+          id, name, barcode, image_url, category_id,
+          product_variants (id, variant_name, price, cogs, inventories(stock))
+        `).order('name'),
+        supabase.from('categories').select('*').order('name'),
+        supabase.from('customers').select('*').order('name'),
+        supabase.from('ingredients').select('*').order('name'),
+        supabase.from('product_recipes').select('*')
+      ])
+
+      if (prodRes.data) setProducts(prodRes.data)
+      if (catRes.data) setCategories(catRes.data)
+      if (custRes.data) setCustomers(custRes.data)
+      if (ingRes.data && ingRes.data.length > 0) setIngredientsList(ingRes.data)
+      if (recRes.data && recRes.data.length > 0) setProductRecipes(recRes.data)
+    } catch (e) {
+      console.error('Data Cloud Fetch Error:', e)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDeleteStaff = async (id) => {
-    const targetStaff = staffList.find((s) => s.id === id)
-    if (!targetStaff) return
+  const fetchHistory = async () => {
+    try {
+      const { data } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          customers (name, phone),
+          order_items (*, product_variants (*, products (name))),
+          order_payments (*)
+        `)
+        .order('created_at', { ascending: false })
 
-    if (id === activeCashier?.id) {
-      return alert(
-        `Akses Ditolak!\nAkun "${targetStaff.name}" sedang aktif digunakan di kasir. Silakan ganti shift terlebih dahulu sebelum menghapus.`
-      )
-    }
-
-    const adminManagerCount = staffList.filter(
-      (s) => s.role === 'ADMIN' || s.role === 'MANAGER'
-    ).length
-
-    const isTargetAdminOrManager = targetStaff.role === 'ADMIN' || targetStaff.role === 'MANAGER'
-
-    if (isTargetAdminOrManager && adminManagerCount <= 1) {
-      return alert(
-        'Akses Ditolak!\nHarus ada minimal 1 akun Admin/Manager yang tersisa di sistem agar otorisasi PIN tidak terkunci.'
-      )
-    }
-
-    if (staffList.length <= 1) {
-      return alert('Minimal harus ada 1 staff/kasir terdaftar di sistem!')
-    }
-
-    if (confirm(`Apakah Anda yakin ingin menghapus staf "${targetStaff.name}" (${targetStaff.role})?`)) {
-      setLoading(true)
-      try {
-        const { error } = await supabase.from('profiles').delete().eq('id', id)
-        if (error) throw error
-
-        const updated = staffList.filter((s) => s.id !== id)
-        setStaffList(updated)
-      } catch (err) {
-        console.error('Delete Staff Error:', err)
-        alert('Gagal menghapus staf dari database: ' + err.message)
-      } finally {
-        setLoading(false)
-      }
+      if (data) setOrdersHistory(data)
+    } catch (e) {
+      console.error('History Fetch Error:', e)
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl relative border border-slate-200">
-        <button
-          onClick={() => {
-            setShowAdminStaffModal(false)
-            setStaffForm({ id: null, name: '', role: 'CASHIER', pin: '' })
-          }}
-          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
-        >
-          <X className="w-5 h-5" />
-        </button>
+  const resetToDefaultStaff = () => {
+    fetchProfiles()
+  }
 
-        {/* Header Modal */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
-            <Shield className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="font-extrabold text-sm text-slate-900">Admin System: Kelola Tim Kasir</h3>
-            <p className="text-[11px] text-slate-500">Atur hak akses role & PIN otorisasi staf.</p>
-          </div>
-        </div>
-
-        {/* Form Tambah/Edit Staff */}
-        <form onSubmit={handleSaveStaff} className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5 text-xs mb-4">
-          <h4 className="font-bold text-slate-800">{staffForm.id ? 'Edit Data Staff' : 'Tambah Staff Baru'}</h4>
-          
-          <input
-            type="text"
-            placeholder="Nama Kasir / Barista"
-            value={staffForm.name}
-            onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
-            className="w-full p-2 bg-white border border-slate-200 rounded-lg font-medium"
-            required
-            disabled={loading}
-          />
-
-          <div className="grid grid-cols-3 gap-2">
-            <select
-              value={staffForm.role}
-              onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })}
-              className="col-span-2 p-2 bg-white border border-slate-200 rounded-lg font-medium text-slate-800"
-              disabled={loading}
-            >
-              <option value="CASHIER">Kasir (CASHIER)</option>
-              <option value="MANAGER">Manager (MANAGER)</option>
-              <option value="ADMIN">Administrator (ADMIN)</option>
-            </select>
-
-            <input
-              type="password"
-              maxLength={6}
-              placeholder="PIN (4 Digit)"
-              value={staffForm.pin}
-              onChange={(e) => setStaffForm({ ...staffForm, pin: e.target.value })}
-              className="p-2 bg-white border border-slate-200 rounded-lg font-mono font-bold text-center"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition disabled:bg-slate-300"
-            >
-              {loading ? 'Menyimpan...' : staffForm.id ? 'Simpan Perubahan' : '+ Tambah Staf'}
-            </button>
-            {staffForm.id && (
-              <button
-                type="button"
-                onClick={() => setStaffForm({ id: null, name: '', role: 'CASHIER', pin: '' })}
-                className="px-3 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg"
-                disabled={loading}
-              >
-                Batal
-              </button>
-            )}
-          </div>
-        </form>
-
-        {/* Daftar Staff */}
-        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-          <h4 className="font-bold text-xs text-slate-700">Daftar Tim Terdaftar ({staffList.length})</h4>
-          {staffList.map((stf) => {
-            const isActive = activeCashier?.id === stf.id
-            const isManagerOrAdmin = stf.role === 'ADMIN' || stf.role === 'MANAGER'
-
-            return (
-              <div key={stf.id} className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-xl shadow-2xs">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 font-extrabold text-xs flex items-center justify-center border border-slate-200 shrink-0">
-                    {stf.initials}
-                  </div>
-                  <div className="min-w-0">
-                    <h5 className="font-bold text-xs text-slate-900 leading-tight truncate">{stf.name}</h5>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${
-                        isManagerOrAdmin
-                          ? 'bg-purple-100 text-purple-700 border border-purple-200'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {stf.role || 'CASHIER'}
-                      </span>
-                      <span className="text-[9px] font-mono text-slate-400">PIN: {stf.pin ? '****' : 'Belum Set'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 shrink-0 ml-2">
-                  <button
-                    onClick={() => {
-                      setActiveCashier(stf)
-                      setShowAdminStaffModal(false)
-                    }}
-                    disabled={isActive || loading}
-                    className={`px-2 py-1 rounded text-[10px] font-bold transition ${
-                      isActive
-                        ? 'bg-slate-100 text-slate-400 cursor-default'
-                        : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                    }`}
-                  >
-                    {isActive ? 'Aktif' : 'Aktifkan'}
-                  </button>
-                  <button
-                    onClick={() => setStaffForm({ id: stf.id, name: stf.name, role: stf.role || 'CASHIER', pin: stf.pin || '' })}
-                    disabled={loading}
-                    className="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-slate-100 transition"
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteStaff(stf.id)}
-                    disabled={loading}
-                    className="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-slate-100 transition"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-      </div>
-    </div>
-  )
+  return {
+    CURRENT_STORE_ID,
+    products: Array.isArray(products) ? products : [],
+    categories: Array.isArray(categories) ? categories : [],
+    customers: Array.isArray(customers) ? customers : [],
+    ordersHistory: Array.isArray(ordersHistory) ? ordersHistory : [],
+    loading,
+    staffList: Array.isArray(staffList) && staffList.length > 0 ? staffList : DEFAULT_STAFF,
+    setStaffList,
+    activeCashier: activeCashier || DEFAULT_STAFF[0],
+    setActiveCashier,
+    tablesList: Array.isArray(tablesList) ? tablesList : [],
+    setTablesList,
+    toppingsList: Array.isArray(toppingsList) ? toppingsList : [],
+    setToppingsList,
+    ingredientsList: Array.isArray(ingredientsList) ? ingredientsList : [],
+    setIngredientsList,
+    productRecipes: Array.isArray(productRecipes) ? productRecipes : [],
+    setProductRecipes,
+    fetchInitialData,
+    fetchHistory,
+    resetToDefaultStaff
+  }
 }
+
+export default useMasterData
