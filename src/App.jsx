@@ -45,6 +45,7 @@ export default function App() {
   const [selectedRecipeProduct, setSelectedRecipeProduct] = useState(null);
   const [showTableModal, setShowTableModal] = useState(false);
   const [showToppingModal, setShowToppingModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showAdminStaffModal, setShowAdminStaffModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -119,6 +120,7 @@ export default function App() {
         setShowProductModal(false);
         setShowReceiptModal(false);
         setShowIngredientModal(false);
+        setShowCategoryModal(false);
         setShowAdminStaffModal(false);
         setShowPinModal(false);
         setShowShiftClosingModal(false);
@@ -236,6 +238,42 @@ export default function App() {
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
   // Action Handlers
+  const handleSaveCategory = async (categoryName) => {
+    try {
+      const { error } = await supabase
+        .from("categories")
+        .insert([{ store_id: master.CURRENT_STORE_ID, name: categoryName }]);
+
+      if (error) throw error;
+
+      if (master.fetchInitialData) master.fetchInitialData();
+      playBeepSound();
+      showToast(`Kategori "${categoryName}" berhasil ditambahkan!`, "success");
+    } catch (err) {
+      showToast("Gagal menambah kategori: " + err.message, "error");
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (!confirm("Hapus kategori ini? Produk terkait tidak akan terhapus."))
+      return;
+
+    try {
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", categoryId);
+
+      if (error) throw error;
+
+      if (master.fetchInitialData) master.fetchInitialData();
+      playBeepSound();
+      showToast("Kategori berhasil dihapus!", "info");
+    } catch (err) {
+      showToast("Gagal menghapus kategori: " + err.message, "error");
+    }
+  };
+
   const handleOpenProductModal = (product = null) => {
     if (product) {
       const variant = product.product_variants?.[0];
@@ -611,6 +649,7 @@ export default function App() {
             setShowIngredientModal={handleOpenProtectedIngredientModal}
             setSelectedRecipeProduct={setSelectedRecipeProduct}
             setShowHppModal={setShowHppModal}
+            setShowCategoryModal={setShowCategoryModal}
           />
         )}
 
@@ -642,6 +681,8 @@ export default function App() {
             setShowTableModal,
             showToppingModal,
             setShowToppingModal,
+            showCategoryModal,
+            setShowCategoryModal,
             showProductModal,
             setShowProductModal,
             showAdminStaffModal,
@@ -682,6 +723,8 @@ export default function App() {
             productForm,
             setProductForm,
             handleSaveProduct,
+            handleSaveCategory,
+            handleDeleteCategory,
 
             handleSaveIngredient: (ing) => {
               if (master.setIngredientsList)

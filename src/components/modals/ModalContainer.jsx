@@ -12,6 +12,7 @@ import OrderRegisterPane from '../pos/OrderRegisterPane'
 import HppCalculatorModal from './HppCalculatorModal'
 import PinAuthModal from './PinAuthModal'
 import ShiftClosingModal from './ShiftClosingModal'
+import CategoryManagerModal from './CategoryManagerModal' // <-- Import Baru
 import { X } from 'lucide-react'
 
 export default function ModalContainer({ modalState = {} }) {
@@ -21,6 +22,7 @@ export default function ModalContainer({ modalState = {} }) {
     selectedRecipeProduct, setSelectedRecipeProduct,
     showTableModal, setShowTableModal,
     showToppingModal, setShowToppingModal,
+    showCategoryModal, setShowCategoryModal, // <-- Prop Baru
     showProductModal, setShowProductModal,
     showAdminStaffModal, setShowAdminStaffModal,
     showPaymentModal, setShowPaymentModal,
@@ -37,6 +39,7 @@ export default function ModalContainer({ modalState = {} }) {
     ordersHistory = [],
     editingProduct, setEditingProduct, productForm, setProductForm, handleSaveProduct,
     handleSaveIngredient, handleDeleteIngredient, handleSaveRecipe, handleDeleteRecipeItem,
+    handleSaveCategory, handleDeleteCategory, // <-- Prop Baru
     handleAddToCartWithCustomization,
     cart = [],
     grandTotal = 0,
@@ -129,6 +132,15 @@ export default function ModalContainer({ modalState = {} }) {
         />
       )}
 
+      {showCategoryModal && (
+        <CategoryManagerModal
+          setShowCategoryModal={setShowCategoryModal}
+          categories={categories}
+          handleSaveCategory={handleSaveCategory}
+          handleDeleteCategory={handleDeleteCategory}
+        />
+      )}
+
       {showProductModal && (
         <ProductModal
           setShowProductModal={setShowProductModal}
@@ -175,7 +187,6 @@ export default function ModalContainer({ modalState = {} }) {
         <HppCalculatorModal onClose={() => setShowHppModal?.(false)} />
       )}
 
-      {/* MODAL OTORISASI NUMPAD PIN */}
       {showPinModal && (
         <PinAuthModal
           onClose={() => setShowPinModal?.(false)}
@@ -186,7 +197,6 @@ export default function ModalContainer({ modalState = {} }) {
         />
       )}
 
-      {/* MODAL REKAPITULASI CLOSING SHIFT */}
       {showShiftClosingModal && (
         <ShiftClosingModal
           onClose={() => setShowShiftClosingModal?.(false)}

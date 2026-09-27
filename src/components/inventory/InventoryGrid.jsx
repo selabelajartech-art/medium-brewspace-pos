@@ -1,5 +1,5 @@
 import React from 'react'
-import { PlusCircle, Edit, Trash2, Tag, Package, ChefHat, Calculator } from 'lucide-react'
+import { PlusCircle, Edit, Trash2, Tag, Package, ChefHat, Calculator, FolderPlus } from 'lucide-react'
 
 export default function InventoryGrid({
   products = [],
@@ -9,7 +9,8 @@ export default function InventoryGrid({
   setShowToppingModal,
   setShowIngredientModal,
   setSelectedRecipeProduct,
-  setShowHppModal
+  setShowHppModal,
+  setShowCategoryModal // <-- Prop Baru
 }) {
   const getCategoryName = (catId) => {
     const cat = categories.find((c) => c.id === catId)
@@ -27,6 +28,12 @@ export default function InventoryGrid({
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setShowCategoryModal?.(true)}
+            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+          >
+            <FolderPlus className="w-4 h-4 text-blue-600" /> Kategori Menu
+          </button>
           <button
             onClick={() => setShowHppModal?.(true)}
             className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
