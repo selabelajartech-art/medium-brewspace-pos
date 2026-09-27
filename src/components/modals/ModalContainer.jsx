@@ -12,7 +12,8 @@ import OrderRegisterPane from '../pos/OrderRegisterPane'
 import HppCalculatorModal from './HppCalculatorModal'
 import PinAuthModal from './PinAuthModal'
 import ShiftClosingModal from './ShiftClosingModal'
-import CategoryManagerModal from './CategoryManagerModal' // <-- Import Baru
+import CategoryManagerModal from './CategoryManagerModal'
+import ConfirmDeleteModal from './ConfirmDeleteModal' // <-- Import Baru
 import { X } from 'lucide-react'
 
 export default function ModalContainer({ modalState = {} }) {
@@ -22,7 +23,7 @@ export default function ModalContainer({ modalState = {} }) {
     selectedRecipeProduct, setSelectedRecipeProduct,
     showTableModal, setShowTableModal,
     showToppingModal, setShowToppingModal,
-    showCategoryModal, setShowCategoryModal, // <-- Prop Baru
+    showCategoryModal, setShowCategoryModal,
     showProductModal, setShowProductModal,
     showAdminStaffModal, setShowAdminStaffModal,
     showPaymentModal, setShowPaymentModal,
@@ -33,13 +34,16 @@ export default function ModalContainer({ modalState = {} }) {
     selectedOrderDetail, setSelectedOrderDetail,
     isMobileCartOpen, setIsMobileCartOpen,
     
+    // State Hapus Transaksi Baru
+    orderToDelete, setOrderToDelete, confirmExecuteDelete,
+
     // Data Handlers & Lists
     categories = [], toppingsList = [], setToppingsList, ingredientsList = [], setIngredientsList,
     productRecipes = [], setProductRecipes, tablesList = [], setTablesList, staffList = [], setStaffList, activeCashier, setActiveCashier,
     ordersHistory = [],
     editingProduct, setEditingProduct, productForm, setProductForm, handleSaveProduct,
     handleSaveIngredient, handleDeleteIngredient, handleSaveRecipe, handleDeleteRecipeItem,
-    handleSaveCategory, handleDeleteCategory, // <-- Prop Baru
+    handleSaveCategory, handleDeleteCategory,
     handleAddToCartWithCustomization,
     cart = [],
     grandTotal = 0,
@@ -84,6 +88,13 @@ export default function ModalContainer({ modalState = {} }) {
           </div>
         </div>
       )}
+
+      {/* POP-UP CONFIRM DELETE TRANSAKSI */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(orderToDelete)}
+        onClose={() => setOrderToDelete?.(null)}
+        onConfirm={confirmExecuteDelete}
+      />
 
       {/* MODAL LAINNYA */}
       {customizingProduct && (

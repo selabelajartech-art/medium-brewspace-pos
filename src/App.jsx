@@ -53,6 +53,9 @@ export default function App() {
   const [showHppModal, setShowHppModal] = useState(false);
   const [showShiftClosingModal, setShowShiftClosingModal] = useState(false);
 
+  // State Hapus Transaksi (Custom Pop-up Modal)
+  const [orderToDelete, setOrderToDelete] = useState(null);
+
   // State PIN Auth Modal
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinSuccessCallback, setPinSuccessCallback] = useState(null);
@@ -125,6 +128,7 @@ export default function App() {
         setShowPinModal(false);
         setShowShiftClosingModal(false);
         setIsMobileCartOpen(false);
+        setOrderToDelete(null);
       }
 
       if (
@@ -192,7 +196,7 @@ export default function App() {
     return () => window.removeEventListener("online", syncOfflineOrders);
   }, [master]);
 
-  // Otorisasi PIN
+  // Otorisasi PIN untuk Modal Akses Terproteksi
   const handleOpenProtectedIngredientModal = () => {
     const currentRole = master.activeCashier?.role;
 
@@ -237,7 +241,7 @@ export default function App() {
   const totalOrders = filteredHistory.length;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-  // Action Handlers
+  // Action Handlers Kategori
   const handleSaveCategory = async (categoryName) => {
     try {
       const { error } = await supabase
@@ -274,39 +278,43 @@ export default function App() {
     }
   };
 
-  // HANDLER HAPUS RIWAYAT TRANSAKSI
-  const handleDeleteOrder = async (orderId) => {
+  // HANDLER HAPUS RIWAYAT TRANSAKSI (Memicu Pop-up Custom Delete Modal)
+  const handleDeleteOrder = (orderId) => {
     const currentRole = master.activeCashier?.role;
 
-    const executeDelete = async () => {
-      if (
-        !confirm(
-          "Apakah Anda yakin ingin menghapus riwayat transaksi ini? Data yang dihapus tidak dapat dikembalikan."
-        )
-      ) {
-        return;
-      }
-
-      try {
-        const { error } = await supabase.from("orders").delete().eq("id", orderId);
-        if (error) throw error;
-
-        if (master.fetchHistory) master.fetchHistory();
-        if (master.fetchInitialData) master.fetchInitialData();
-
-        playBeepSound();
-        showToast("Riwayat transaksi berhasil dihapus!", "success");
-        setSelectedOrderDetail(null);
-      } catch (err) {
-        showToast("Gagal menghapus transaksi: " + err.message, "error");
-      }
+    const triggerDeleteModal = () => {
+      setOrderToDelete(orderId);
     };
 
     if (currentRole === "MANAGER" || currentRole === "ADMIN") {
-      executeDelete();
+      triggerDeleteModal();
     } else {
-      setPinSuccessCallback(() => executeDelete);
+      setPinSuccessCallback(() => triggerDeleteModal);
       setShowPinModal(true);
+    }
+  };
+
+  const confirmExecuteDelete = async () => {
+    if (!orderToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .delete()
+        .eq("id", orderToDelete);
+
+      if (error) throw error;
+
+      if (master.fetchHistory) master.fetchHistory();
+      if (master.fetchInitialData) master.fetchInitialData();
+
+      playBeepSound();
+      showToast("Riwayat transaksi berhasil dihapus!", "success");
+      setSelectedOrderDetail(null);
+    } catch (err) {
+      showToast("Gagal menghapus transaksi: " + err.message, "error");
+    } finally {
+      setOrderToDelete(null);
     }
   };
 
@@ -743,6 +751,11 @@ export default function App() {
             setSelectedOrderDetail,
             isMobileCartOpen,
             setIsMobileCartOpen,
+
+            // State Pop-up Delete Modal
+            orderToDelete,
+            setOrderToDelete,
+            confirmExecuteDelete,
 
             categories: categoriesList,
             toppingsList: master.toppingsList,
