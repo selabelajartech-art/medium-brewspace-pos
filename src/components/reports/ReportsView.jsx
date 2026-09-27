@@ -82,71 +82,91 @@ export default function ReportsView({
   const cashierList = Object.values(cashierSalesMap)
 
   return (
-    <div className="flex-1 h-full min-h-0 p-4 sm:p-6 overflow-y-auto bg-[#f8f9fa] space-y-6 pb-28 md:pb-8">
+    <div className="flex-1 h-full min-h-0 p-4 sm:p-6 overflow-y-auto bg-slate-50/50 space-y-6 pb-28 md:pb-8">
       
-      {/* Header & Filter Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+      {/* Header & Filter Bar Terpadu */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
-          <h2 className="font-black text-base text-slate-900">Dashboard Analisa Penjualan</h2>
+          <h2 className="font-extrabold text-base text-slate-900">Dashboard Analisa Penjualan</h2>
           <p className="text-xs text-slate-400 font-medium mt-0.5">Ringkasan performa finansial & operasional Medium Brew.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Preset Buttons */}
-          <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold text-slate-600">
+        {/* Control Toolbar */}
+        <div className="flex flex-wrap items-center gap-2.5 pt-2 xl:pt-0 border-t xl:border-t-0 border-slate-100">
+          
+          {/* Preset Range Buttons */}
+          <div className="flex items-center bg-slate-100/80 p-1 rounded-2xl border border-slate-200/60 text-xs font-bold text-slate-600">
             <button
+              type="button"
               onClick={() => applyDatePreset('today')}
-              className={`px-3 py-1.5 rounded-lg transition ${filterPreset === 'today' ? 'bg-blue-600 text-white shadow-xs' : 'hover:bg-slate-200'}`}
+              className={`px-3 py-1.5 rounded-xl transition ${
+                filterPreset === 'today'
+                  ? 'bg-blue-600 text-white shadow-2xs font-extrabold'
+                  : 'hover:bg-slate-200/70 text-slate-600'
+              }`}
             >
               Hari Ini
             </button>
             <button
+              type="button"
               onClick={() => applyDatePreset('7days')}
-              className={`px-3 py-1.5 rounded-lg transition ${filterPreset === '7days' ? 'bg-blue-600 text-white shadow-xs' : 'hover:bg-slate-200'}`}
+              className={`px-3 py-1.5 rounded-xl transition ${
+                filterPreset === '7days'
+                  ? 'bg-blue-600 text-white shadow-2xs font-extrabold'
+                  : 'hover:bg-slate-200/70 text-slate-600'
+              }`}
             >
               7 Hari
             </button>
             <button
+              type="button"
               onClick={() => applyDatePreset('this_month')}
-              className={`px-3 py-1.5 rounded-lg transition ${filterPreset === 'this_month' ? 'bg-blue-600 text-white shadow-xs' : 'hover:bg-slate-200'}`}
+              className={`px-3 py-1.5 rounded-xl transition ${
+                filterPreset === 'this_month'
+                  ? 'bg-blue-600 text-white shadow-2xs font-extrabold'
+                  : 'hover:bg-slate-200/70 text-slate-600'
+              }`}
             >
               Bulan Ini
             </button>
           </div>
 
-          {/* Date Picker Input */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-mono font-bold">
+          {/* Date Picker Input Group */}
+          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/60 text-xs font-mono font-semibold">
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-800 focus:outline-none"
+              className="bg-white border border-slate-200/80 rounded-xl px-2.5 py-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-xs cursor-pointer"
             />
-            <span className="text-slate-400">-</span>
+            <span className="text-slate-400 font-sans font-bold px-0.5">-</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-800 focus:outline-none"
+              className="bg-white border border-slate-200/80 rounded-xl px-2.5 py-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-xs cursor-pointer"
             />
           </div>
 
-          {/* Ekspor Excel */}
+          {/* Ekspor Excel CTA Button */}
           <button
+            type="button"
             onClick={() => exportToExcel(filteredHistory, startDate, endDate)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition active:scale-98"
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-extrabold text-xs flex items-center gap-2 shadow-md shadow-blue-600/20 transition active:scale-98 shrink-0 ml-auto xl:ml-0"
           >
-            <FileSpreadsheet className="w-4 h-4" /> Ekspor Excel
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Ekspor Excel</span>
           </button>
+
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Omset */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400">Total Omset</span>
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Total Omset</span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-200/60">
               <TrendingUp className="w-4 h-4" />
             </div>
@@ -158,9 +178,9 @@ export default function ReportsView({
         </div>
 
         {/* Total Transaksi */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400">Total Transaksi</span>
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Total Transaksi</span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-200/60">
               <ShoppingBag className="w-4 h-4" />
             </div>
@@ -172,9 +192,9 @@ export default function ReportsView({
         </div>
 
         {/* AOV */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400">Rata-Rata / Order (AOV)</span>
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Rata-Rata / Order</span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-200/60">
               <DollarSign className="w-4 h-4" />
             </div>
@@ -182,13 +202,13 @@ export default function ReportsView({
           <h3 className="text-xl font-black text-slate-900 font-mono">
             Rp {Math.round(avgOrderValue).toLocaleString('id-ID')}
           </h3>
-          <p className="text-[10px] text-slate-400 font-medium">Nilai belanja rata-rata</p>
+          <p className="text-[10px] text-slate-400 font-medium">Nilai belanja rata-rata per nota</p>
         </div>
 
         {/* Produk Terjual */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-400">Produk Terjual</span>
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Produk Terjual</span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-200/60">
               <PackageCheck className="w-4 h-4" />
             </div>
@@ -196,7 +216,7 @@ export default function ReportsView({
           <h3 className="text-xl font-black text-slate-900 font-mono">
             {totalItemsSold} <span className="text-xs font-bold text-slate-400">Item</span>
           </h3>
-          <p className="text-[10px] text-slate-400 font-medium">Total porsi keluar</p>
+          <p className="text-[10px] text-slate-400 font-medium">Total porsi tersaji</p>
         </div>
       </div>
 
@@ -204,8 +224,8 @@ export default function ReportsView({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
         {/* Top 5 Produk */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+          <div className="flex justify-between items-center pb-3 border-b border-slate-100">
             <h3 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Award className="w-4 h-4 text-blue-600" /> Produk Terlaris (Top 5)
             </h3>
@@ -238,8 +258,8 @@ export default function ReportsView({
         </div>
 
         {/* Breakdown Pembayaran */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+          <div className="flex justify-between items-center pb-3 border-b border-slate-100">
             <h3 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-blue-600" /> Breakdown Metode Pembayaran
             </h3>
@@ -247,28 +267,28 @@ export default function ReportsView({
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-1">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70 space-y-1">
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70 space-y-1">
               <span className="text-[10px] font-bold text-slate-500 uppercase block">Tunai (Cash)</span>
               <p className="text-sm font-black text-slate-900 font-mono">
                 Rp {paymentBreakdown.CASH.toLocaleString('id-ID')}
               </p>
             </div>
 
-            <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200/60 space-y-1">
+            <div className="p-3.5 bg-blue-50/60 rounded-2xl border border-blue-200/60 space-y-1">
               <span className="text-[10px] font-bold text-blue-600 uppercase block">QRIS / E-Wallet</span>
               <p className="text-sm font-black text-blue-900 font-mono">
                 Rp {paymentBreakdown.QRIS.toLocaleString('id-ID')}
               </p>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70 space-y-1">
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70 space-y-1">
               <span className="text-[10px] font-bold text-slate-600 uppercase block">Debit / Kredit</span>
               <p className="text-sm font-black text-slate-900 font-mono">
                 Rp {paymentBreakdown.CARD.toLocaleString('id-ID')}
               </p>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70 space-y-1">
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70 space-y-1">
               <span className="text-[10px] font-bold text-slate-600 uppercase block">Bank Transfer</span>
               <p className="text-sm font-black text-slate-900 font-mono">
                 Rp {paymentBreakdown.TRANSFER.toLocaleString('id-ID')}
@@ -278,29 +298,29 @@ export default function ReportsView({
         </div>
 
         {/* Peringatan Stok Bahan Baku */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+          <div className="flex justify-between items-center pb-3 border-b border-slate-100">
             <h3 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-500" /> Peringatan Stok Bahan Baku
             </h3>
             <span className="text-[10px] text-red-600 font-bold">{lowStockIngredients.length} Perlu Restock</span>
           </div>
 
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {lowStockIngredients.length === 0 ? (
-              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200/60 text-center text-xs text-blue-800 font-bold">
+              <div className="p-4 bg-blue-50/60 rounded-2xl border border-blue-200/60 text-center text-xs text-blue-800 font-bold">
                 Semua stok bahan baku saat ini berada dalam kondisi aman.
               </div>
             ) : (
               lowStockIngredients.map((ing) => (
-                <div key={ing.id} className="flex justify-between items-center p-2.5 bg-red-50 border border-red-200/60 rounded-xl text-xs">
+                <div key={ing.id} className="flex justify-between items-center p-3 bg-red-50 border border-red-200/60 rounded-2xl text-xs">
                   <div>
                     <h5 className="font-bold text-red-900">{ing.name}</h5>
-                    <p className="text-[10px] text-red-600 font-mono">
+                    <p className="text-[10px] text-red-600 font-mono mt-0.5">
                       Stok Tersisa: <strong>{ing.current_stock} {ing.unit}</strong> (Min: {ing.min_stock} {ing.unit})
                     </p>
                   </div>
-                  <span className="px-2 py-1 bg-red-600 text-white font-extrabold text-[9px] rounded-lg uppercase">
+                  <span className="px-2.5 py-1 bg-red-600 text-white font-extrabold text-[9px] rounded-xl uppercase">
                     Kritis
                   </span>
                 </div>
@@ -310,23 +330,23 @@ export default function ReportsView({
         </div>
 
         {/* Penjualan per Kasir */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+          <div className="flex justify-between items-center pb-3 border-b border-slate-100">
             <h3 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-600" /> Penjualan Per Kasir
             </h3>
             <span className="text-[10px] text-slate-400 font-semibold">Performa Staf</span>
           </div>
 
-          <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+          <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {cashierList.length === 0 ? (
               <p className="text-xs text-slate-400 italic py-6 text-center">Belum ada data transaksi.</p>
             ) : (
               cashierList.map((stf) => (
-                <div key={stf.name} className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-200/70 rounded-xl text-xs">
+                <div key={stf.name} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-200/70 rounded-2xl text-xs">
                   <div>
-                    <h5 className="font-bold text-slate-900">{stf.name}</h5>
-                    <p className="text-[10px] text-slate-400 font-mono">{stf.count} Transaksi Selesai</p>
+                    <h5 className="font-extrabold text-slate-900">{stf.name}</h5>
+                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">{stf.count} Transaksi Selesai</p>
                   </div>
                   <span className="font-black text-slate-900 font-mono">
                     Rp {stf.total.toLocaleString('id-ID')}
