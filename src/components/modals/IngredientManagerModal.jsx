@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { X, Edit, Trash2, Package, AlertTriangle } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { X, Edit, Trash2, Package, AlertTriangle, Calculator, ChevronDown, ChevronUp } from 'lucide-react'
 
 export default function IngredientManagerModal({
   setShowIngredientModal,
@@ -15,7 +15,30 @@ export default function IngredientManagerModal({
     min_stock: '10',
     cost_per_unit: ''
   })
+
+  // State Tambahan untuk Kalkulator Nota Belanja
+  const [showHelper, setShowHelper] = useState(false)
+  const [purchasePrice, setPurchasePrice] = useState('')
+  const [packageQty, setPackageQty] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Otomatis hitung harga modal per gram/unit jika kalkulator nota diisi
+  useEffect(() => {
+    const price = parseFloat(purchasePrice)
+    const qty = parseFloat(packageQty)
+
+    if (price > 0 && qty > 0) {
+      const calculatedUnitCost = (price / qty).toFixed(2)
+      setForm((prev) => ({ ...prev, cost_per_unit: calculatedUnitCost }))
+    }
+  }, [purchasePrice, packageQty])
+
+  const resetForm = () => {
+    setForm({ id: null, name: '', unit: 'Gram', current_stock: '', min_stock: '10', cost_per_unit: '' })
+    setPurchasePrice('')
+    setPackageQty('')
+    setShowHelper(false)
+  }
 
   const onSubmit = async (e) => {
     e.preventDefault()
@@ -35,7 +58,7 @@ export default function IngredientManagerModal({
           cost_per_unit: parseFloat(form.cost_per_unit) || 0
         })
       }
-      setForm({ id: null, name: '', unit: 'Gram', current_stock: '', min_stock: '10', cost_per_unit: '' })
+      resetForm()
     } catch (err) {
       console.error('Gagal menyimpan bahan:', err)
     } finally {
@@ -52,6 +75,9 @@ export default function IngredientManagerModal({
       min_stock: (ing.min_stock ?? 10).toString(),
       cost_per_unit: (ing.cost_per_unit ?? 0).toString()
     })
+    setPurchasePrice('')
+    setPackageQty('')
+    setShowHelper(false)
   }
 
   const onDelete = async (ingId) => {
@@ -66,7 +92,7 @@ export default function IngredientManagerModal({
           await handleDeleteIngredient(ingId)
         }
         if (form.id === ingId) {
-          setForm({ id: null, name: '', unit: 'Gram', current_stock: '', min_stock: '10', cost_per_unit: '' })
+          resetForm()
         }
       } catch (err) {
         console.error('Gagal menghapus bahan:', err)
@@ -103,8 +129,19 @@ export default function IngredientManagerModal({
         </div>
 
         {/* Form Tambah/Edit Bahan Baku */}
-        <form onSubmit={onSubmit} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2.5 text-xs">
-          <h4 className="font-bold text-slate-800">{form.id ? 'Edit Data Bahan Baku' : 'Tambah Bahan Baku Baru'}</h4>
+        <form onSubmit={onSubmit} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-3 text-xs">
+          <div className="flex justify-between items-center">
+            <h4 className="font-bold text-slate-800">{form.id ? 'Edit Data Bahan Baku' : 'Tambah Bahan Baku Baru'}</h4>
+            <button
+              type="button"
+              onClick={() => setShowHelper(!showHelper)}
+              className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition"
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              {showHelper ? 'Sembunyikan Kalkulator Nota' : 'Hitung Modal dari Nota Beli'}
+              {showHelper ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
           
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
@@ -131,9 +168,49 @@ export default function IngredientManagerModal({
             </div>
           </div>
 
+          {/* Sub-Form Helper: Hitung Modal dari Nota Belanja Kemasan */}
+          {showHelper && (
+            <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-2 text-xs animate-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center gap-1.5 font-bold text-blue-900 text-[11px]">
+                <Calculator className="w-3.5 h-3.5 text-blue-600" />
+                <span>Bantu Hitung Modal per {form.unit} dari Nota Kemasan</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-blue-700 font-bold block mb-1">Total Harga Beli Nota (Rp)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="Contoh: 85000"
+                    value={purchasePrice}
+                    onChange={(e) => setPurchasePrice(e.target.value)}
+                    className="w-full p-2 bg-white border border-blue-200 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-blue-700 font-bold block mb-1">Total Isi Kemasan ({form.unit})</label>
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="Contoh: 250"
+                    value={packageQty}
+                    onChange={(e) => setPackageQty(e.target.value)}
+                    className="w-full p-2 bg-white border border-blue-200 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
+                  />
+                </div>
+              </div>
+              {parseFloat(form.cost_per_unit) > 0 && (
+                <div className="text-[11px] text-blue-800 font-medium pt-1 border-t border-blue-200/60 flex justify-between">
+                  <span>Hasil Modal per {form.unit}:</span>
+                  <strong className="font-mono text-blue-900">Rp {parseFloat(form.cost_per_unit).toLocaleString('id-ID')} / {form.unit}</strong>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-[10px] text-slate-400 font-bold block mb-1">Stok Saat Ini</label>
+              <label className="text-[10px] text-slate-400 font-bold block mb-1">Stok Saat Ini ({form.unit})</label>
               <input
                 type="number"
                 step="any"
@@ -156,7 +233,7 @@ export default function IngredientManagerModal({
               />
             </div>
             <div>
-              <label className="text-[10px] text-slate-400 font-bold block mb-1">Harga/Satuan (Rp)</label>
+              <label className="text-[10px] text-slate-400 font-bold block mb-1">Modal/Satuan (Rp/{form.unit})</label>
               <input
                 type="number"
                 step="any"
@@ -180,7 +257,7 @@ export default function IngredientManagerModal({
             {form.id && (
               <button
                 type="button"
-                onClick={() => setForm({ id: null, name: '', unit: 'Gram', current_stock: '', min_stock: '10', cost_per_unit: '' })}
+                onClick={resetForm}
                 className="px-3.5 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition"
               >
                 Batal
