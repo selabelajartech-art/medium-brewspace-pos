@@ -3,6 +3,7 @@ import { useState } from 'react'
 export function usePOSCart() {
   const [cart, setCart] = useState([])
   const [customerName, setCustomerName] = useState('')
+  const [customerId, setCustomerId] = useState(null)
   const [tableNumber, setTableNumber] = useState('')
   const [orderType, setOrderType] = useState('DINE_IN')
   const [payments, setPayments] = useState([{ method: 'CASH', amount: '' }])
@@ -54,6 +55,8 @@ export function usePOSCart() {
     setCart,
     customerName,
     setCustomerName,
+    customerId,
+    setCustomerId,
     tableNumber,
     setTableNumber,
     orderType,

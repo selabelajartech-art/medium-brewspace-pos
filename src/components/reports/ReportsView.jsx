@@ -8,7 +8,8 @@ import {
   Users,
   FileSpreadsheet,
   Award,
-  PackageCheck
+  PackageCheck,
+  PieChart
 } from 'lucide-react'
 import { exportToExcel } from '../../utils/excelExport'
 
@@ -27,14 +28,17 @@ export default function ReportsView({
 }) {
   const productSalesMap = {}
   let totalItemsSold = 0
+  let totalCogs = 0
 
   filteredHistory.forEach((order) => {
     order.order_items?.forEach((item) => {
       const name = item.name || item.product_variants?.products?.name || 'Produk'
       const qty = item.quantity || 1
       const subtotal = item.subtotal || ((item.unit_price || item.price || 0) * qty)
+      const cogs = (item.cogs || item.product_variants?.cogs || 0) * qty
 
       totalItemsSold += qty
+      totalCogs += cogs
 
       if (!productSalesMap[name]) {
         productSalesMap[name] = { name, qty: 0, revenue: 0 }
@@ -43,6 +47,9 @@ export default function ReportsView({
       productSalesMap[name].revenue += subtotal
     })
   })
+
+  const netProfit = Math.max(0, totalRevenue - totalCogs)
+  const profitMarginPercent = totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0
 
   const topProducts = Object.values(productSalesMap)
     .sort((a, b) => b.qty - a.qty)
@@ -84,10 +91,8 @@ export default function ReportsView({
   return (
     <div className="flex-1 h-full min-h-0 p-4 sm:p-6 overflow-y-auto bg-slate-50/50 space-y-6 pb-28 md:pb-8">
       
-      {/* Header & Filter Bar Terpadu (Lega & Proporsional) */}
+      {/* Filter Bar */}
       <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
-        
-        {/* Row 1: Judul Dashboard & Tombol Ekspor */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="font-extrabold text-base sm:text-lg text-slate-900">Analisa Penjualan</h2>
@@ -106,10 +111,7 @@ export default function ReportsView({
           </button>
         </div>
 
-        {/* Row 2: Filter Preset & Range Tanggal (Lebih Panjang & Lapang) */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 pt-1 border-t border-slate-100">
-          
-          {/* Preset Buttons Group (Pill Lega dengan Padding Lebih Empuk) */}
           <div className="grid grid-cols-3 md:flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 text-xs font-bold text-slate-600 shrink-0">
             <button
               type="button"
@@ -146,7 +148,6 @@ export default function ReportsView({
             </button>
           </div>
 
-          {/* Date Picker Input Group (Expanded / Lebih Panjang) */}
           <div className="flex items-center justify-between gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 text-xs font-mono font-semibold flex-1 max-w-md">
             <input
               type="date"
@@ -162,13 +163,12 @@ export default function ReportsView({
               className="bg-white border border-slate-200/80 rounded-xl px-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 text-xs font-mono font-bold cursor-pointer w-full text-center"
             />
           </div>
-
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Omset */}
+        {/* Omset */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Total Omset</span>
@@ -193,10 +193,24 @@ export default function ReportsView({
           <h3 className="text-xl font-black text-slate-900 font-mono">
             {totalOrders} <span className="text-xs font-bold text-slate-400">Order</span>
           </h3>
-          <p className="text-[10px] text-slate-400 font-medium">Jumlah transaksi selesai</p>
+          <p className="text-[10px] text-slate-400 font-medium">Jumlah order selesai</p>
         </div>
 
-        {/* AOV */}
+        {/* Margin Keuntungan Bersih */}
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Laba Bersih / Margin</span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-200/60">
+              <PieChart className="w-4 h-4" />
+            </div>
+          </div>
+          <h3 className="text-xl font-black text-emerald-600 font-mono">
+            Rp {netProfit.toLocaleString('id-ID')}
+          </h3>
+          <p className="text-[10px] text-slate-400 font-medium">Est. Margin Bersih: {profitMarginPercent}%</p>
+        </div>
+
+        {/* Rata-Rata Order */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Rata-Rata / Order</span>
@@ -207,25 +221,11 @@ export default function ReportsView({
           <h3 className="text-xl font-black text-slate-900 font-mono">
             Rp {Math.round(avgOrderValue).toLocaleString('id-ID')}
           </h3>
-          <p className="text-[10px] text-slate-400 font-medium">Nilai belanja rata-rata per nota</p>
-        </div>
-
-        {/* Produk Terjual */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Produk Terjual</span>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-200/60">
-              <PackageCheck className="w-4 h-4" />
-            </div>
-          </div>
-          <h3 className="text-xl font-black text-slate-900 font-mono">
-            {totalItemsSold} <span className="text-xs font-bold text-slate-400">Item</span>
-          </h3>
-          <p className="text-[10px] text-slate-400 font-medium">Total porsi tersaji</p>
+          <p className="text-[10px] text-slate-400 font-medium">Rata-rata nilai order per nota</p>
         </div>
       </div>
 
-      {/* Analytics Widget Grid */}
+      {/* Analytics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
         {/* Top 5 Produk */}
@@ -239,7 +239,7 @@ export default function ReportsView({
 
           <div className="space-y-3.5">
             {topProducts.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-6 text-center">Belum ada data transaksi pada periode ini.</p>
+              <p className="text-xs text-slate-400 italic py-6 text-center">Belum ada data transaksi.</p>
             ) : (
               topProducts.map((item, idx) => {
                 const percentage = Math.round((item.qty / maxQty) * 100)
@@ -262,7 +262,7 @@ export default function ReportsView({
           </div>
         </div>
 
-        {/* Breakdown Pembayaran */}
+        {/* Breakdown Metode Pembayaran */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex justify-between items-center pb-3 border-b border-slate-100">
             <h3 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -299,66 +299,6 @@ export default function ReportsView({
                 Rp {paymentBreakdown.TRANSFER.toLocaleString('id-ID')}
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* Peringatan Stok Bahan Baku */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-500" /> Peringatan Stok Bahan Baku
-            </h3>
-            <span className="text-[10px] text-red-600 font-bold">{lowStockIngredients.length} Perlu Restock</span>
-          </div>
-
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {lowStockIngredients.length === 0 ? (
-              <div className="p-4 bg-blue-50/60 rounded-2xl border border-blue-200/60 text-center text-xs text-blue-800 font-bold">
-                Semua stok bahan baku saat ini berada dalam kondisi aman.
-              </div>
-            ) : (
-              lowStockIngredients.map((ing) => (
-                <div key={ing.id} className="flex justify-between items-center p-3 bg-red-50 border border-red-200/60 rounded-2xl text-xs">
-                  <div>
-                    <h5 className="font-bold text-red-900">{ing.name}</h5>
-                    <p className="text-[10px] text-red-600 font-mono mt-0.5">
-                      Stok Tersisa: <strong>{ing.current_stock} {ing.unit}</strong> (Min: {ing.min_stock} {ing.unit})
-                    </p>
-                  </div>
-                  <span className="px-2.5 py-1 bg-red-600 text-white font-extrabold text-[9px] rounded-xl uppercase">
-                    Kritis
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Penjualan per Kasir */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-600" /> Penjualan Per Kasir
-            </h3>
-            <span className="text-[10px] text-slate-400 font-semibold">Performa Staf</span>
-          </div>
-
-          <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {cashierList.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-6 text-center">Belum ada data transaksi.</p>
-            ) : (
-              cashierList.map((stf) => (
-                <div key={stf.name} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-200/70 rounded-2xl text-xs">
-                  <div>
-                    <h5 className="font-extrabold text-slate-900">{stf.name}</h5>
-                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">{stf.count} Transaksi Selesai</p>
-                  </div>
-                  <span className="font-black text-slate-900 font-mono">
-                    Rp {stf.total.toLocaleString('id-ID')}
-                  </span>
-                </div>
-              ))
-            )}
           </div>
         </div>
 

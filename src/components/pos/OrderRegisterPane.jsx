@@ -1,9 +1,12 @@
 import React from 'react'
-import { Plus, Minus, Trash2, Settings, ShoppingBag, ArrowRight } from 'lucide-react'
+import { Plus, Minus, Trash2, Settings, ShoppingBag, ArrowRight, User } from 'lucide-react'
 
 export default function OrderRegisterPane({
   customerName,
   setCustomerName,
+  customerId,
+  setCustomerId,
+  customersList = [],
   tableNumber,
   setTableNumber,
   tablesList = [],
@@ -16,6 +19,7 @@ export default function OrderRegisterPane({
   setPayments
 }) {
   const safeCart = Array.isArray(cart) ? cart : []
+  const safeCustomers = Array.isArray(customersList) ? customersList : []
 
   return (
     <div className="w-full bg-white flex flex-col justify-between h-full space-y-3">
@@ -23,7 +27,7 @@ export default function OrderRegisterPane({
       {/* Upper Cart Details */}
       <div className="space-y-3 overflow-y-auto pr-1 flex-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         
-        {/* Bill Details Header */}
+        {/* Header Rincian Tagihan */}
         <div className="pb-2.5 border-b border-slate-100 flex justify-between items-center">
           <div>
             <h3 className="font-extrabold text-sm text-slate-900">Rincian Tagihan</h3>
@@ -39,16 +43,46 @@ export default function OrderRegisterPane({
         {/* Input Customer & Table Selector */}
         <div className="space-y-2">
           <div>
-            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
-              Nama Pelanggan
+            <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1 flex items-center justify-between">
+              <span>Pelanggan</span>
+              {customerId && (
+                <span className="text-emerald-600 text-[9px] font-bold">+Poin Aktif</span>
+              )}
             </label>
-            <input
-              type="text"
-              placeholder="Contoh: Budi / Umum"
-              value={customerName || ''}
-              onChange={(e) => setCustomerName?.(e.target.value)}
-              className="w-full px-3 py-1.5 sm:py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
-            />
+            
+            <div className="flex gap-1.5">
+              <select
+                value={customerId || ''}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === '') {
+                    setCustomerId?.(null)
+                  } else {
+                    const found = safeCustomers.find((c) => String(c.id) === String(val))
+                    setCustomerId?.(found?.id || val)
+                    if (found) setCustomerName?.(found.name)
+                  }
+                }}
+                className="w-full px-3 py-1.5 sm:py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition cursor-pointer"
+              >
+                <option value="">Pelanggan Umum (Tanpa Member)</option>
+                {safeCustomers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.points || 0} Poin)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {!customerId && (
+              <input
+                type="text"
+                placeholder="Nama Pelanggan Manual (Opsional)..."
+                value={customerName || ''}
+                onChange={(e) => setCustomerName?.(e.target.value)}
+                className="w-full mt-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-medium focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
+              />
+            )}
           </div>
 
           <div>
@@ -81,7 +115,7 @@ export default function OrderRegisterPane({
           </div>
         </div>
 
-        {/* Cart Item List */}
+        {/* List Cart */}
         <div className="space-y-2 pt-1">
           <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Item Pesanan</h4>
           {safeCart.length === 0 ? (
@@ -141,7 +175,7 @@ export default function OrderRegisterPane({
         </div>
       </div>
 
-      {/* Summary & Action Button */}
+      {/* Ringkasan & Tombol Aksi */}
       <div className="pt-2 border-t border-slate-100 space-y-2.5 shrink-0">
         <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-1">
           <div className="flex justify-between text-xs font-bold text-slate-500">
