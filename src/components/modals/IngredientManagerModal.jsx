@@ -16,28 +16,38 @@ export default function IngredientManagerModal({
     cost_per_unit: ''
   })
 
-  // State Tambahan untuk Kalkulator Nota Belanja
-  const [showHelper, setShowHelper] = useState(false)
+  // State Kalkulator Nota Belanja
+  const [showHelper, setShowHelper] = useState(true)
   const [purchasePrice, setPurchasePrice] = useState('')
   const [packageQty, setPackageQty] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Otomatis hitung harga modal per gram/unit jika kalkulator nota diisi
+  // Auto-sync: Total Isi Kemasan langsung mengisi Stok Saat Ini & menghitung Modal/Satuan
   useEffect(() => {
     const price = parseFloat(purchasePrice)
     const qty = parseFloat(packageQty)
 
-    if (price > 0 && qty > 0) {
-      const calculatedUnitCost = (price / qty).toFixed(2)
-      setForm((prev) => ({ ...prev, cost_per_unit: calculatedUnitCost }))
-    }
+    setForm((prev) => {
+      const updated = { ...prev }
+
+      // 1. Auto-fill Stok Saat Ini dari Total Isi Kemasan jika diisi
+      if (packageQty !== '') {
+        updated.current_stock = packageQty
+      }
+
+      // 2. Auto-calculate Modal per Satuan dari (Harga Nota / Total Isi)
+      if (price > 0 && qty > 0) {
+        updated.cost_per_unit = (price / qty).toFixed(2)
+      }
+
+      return updated
+    })
   }, [purchasePrice, packageQty])
 
   const resetForm = () => {
     setForm({ id: null, name: '', unit: 'Gram', current_stock: '', min_stock: '10', cost_per_unit: '' })
     setPurchasePrice('')
     setPackageQty('')
-    setShowHelper(false)
   }
 
   const onSubmit = async (e) => {
@@ -77,7 +87,6 @@ export default function IngredientManagerModal({
     })
     setPurchasePrice('')
     setPackageQty('')
-    setShowHelper(false)
   }
 
   const onDelete = async (ingId) => {
@@ -168,12 +177,12 @@ export default function IngredientManagerModal({
             </div>
           </div>
 
-          {/* Sub-Form Helper: Hitung Modal dari Nota Belanja Kemasan */}
+          {/* Sub-Form Helper: Hitung Modal & Auto-Fill Stok */}
           {showHelper && (
             <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-2 text-xs animate-in slide-in-from-top-2 duration-200">
               <div className="flex items-center gap-1.5 font-bold text-blue-900 text-[11px]">
                 <Calculator className="w-3.5 h-3.5 text-blue-600" />
-                <span>Bantu Hitung Modal per {form.unit} dari Nota Kemasan</span>
+                <span>Bantu Hitung Modal & Isi Stok dari Nota Belanja</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -181,7 +190,7 @@ export default function IngredientManagerModal({
                   <input
                     type="number"
                     step="any"
-                    placeholder="Contoh: 85000"
+                    placeholder="Contoh: 120000"
                     value={purchasePrice}
                     onChange={(e) => setPurchasePrice(e.target.value)}
                     className="w-full p-2 bg-white border border-blue-200 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
@@ -192,7 +201,7 @@ export default function IngredientManagerModal({
                   <input
                     type="number"
                     step="any"
-                    placeholder="Contoh: 250"
+                    placeholder="Contoh: 200"
                     value={packageQty}
                     onChange={(e) => setPackageQty(e.target.value)}
                     className="w-full p-2 bg-white border border-blue-200 rounded-xl font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/30"

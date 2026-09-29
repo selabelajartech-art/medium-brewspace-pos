@@ -1,5 +1,5 @@
-import React from 'react'
-import { X, PlusCircle, Save, PackagePlus } from 'lucide-react'
+import React, { useEffect } from 'react'
+import { X, PlusCircle, Save, PackagePlus, Calculator, Lock } from 'lucide-react'
 
 export default function ProductModal({
   setShowProductModal,
@@ -7,8 +7,40 @@ export default function ProductModal({
   productForm,
   setProductForm,
   categories = [],
+  ingredientsList = [],
+  productRecipes = [],
   handleSaveProduct
 }) {
+  const variantId = editingProduct?.product_variants?.[0]?.id
+
+  // 1. Cari resep khusus untuk produk/varian ini
+  const currentRecipes = (productRecipes || []).filter(
+    (r) => String(r.variant_id) === String(variantId) &&
+    ingredientsList.some((ing) => String(ing.id) === String(r.ingredient_id))
+  )
+
+  const hasRecipe = currentRecipes.length > 0
+
+  // 2. Hitung Stok Otomatis berdasarkan bahan baku terkecil (Faktor Pembatas)
+  let calculatedStock = null
+  if (hasRecipe) {
+    const capacities = currentRecipes.map((r) => {
+      const ing = ingredientsList.find((i) => String(i.id) === String(r.ingredient_id))
+      if (!ing) return 0
+      const currentStock = parseFloat(ing.current_stock ?? ing.stock ?? 0)
+      const qtyReq = parseFloat(r.quantity_required || 0)
+      return qtyReq > 0 ? Math.floor(currentStock / qtyReq) : 0
+    })
+    calculatedStock = Math.min(...capacities)
+  }
+
+  // 3. Auto-sync stok jika produk memiliki resep
+  useEffect(() => {
+    if (hasRecipe && calculatedStock !== null) {
+      setProductForm((prev) => ({ ...prev, stock: calculatedStock.toString() }))
+    }
+  }, [hasRecipe, calculatedStock])
+
   return (
     <div
       onClick={(e) => {
@@ -88,17 +120,36 @@ export default function ProductModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 block">Stok (Pcs)</label>
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-bold text-slate-700 block">Stok (Pcs)</label>
+                {hasRecipe && (
+                  <span className="text-[9px] font-extrabold text-blue-600 flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" /> Auto Resep
+                  </span>
+                )}
+              </div>
               <input
                 type="number"
                 required
+                readOnly={hasRecipe}
                 placeholder="50"
                 value={productForm.stock}
                 onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl font-mono font-bold text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
+                className={`w-full px-3.5 py-2.5 border rounded-2xl font-mono font-bold text-xs transition ${
+                  hasRecipe
+                    ? 'bg-blue-50/60 border-blue-200 text-blue-900 cursor-not-allowed'
+                    : 'bg-slate-50 border-slate-200/80 text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600'
+                }`}
               />
             </div>
           </div>
+
+          {hasRecipe && (
+            <p className="text-[10px] text-blue-600 font-medium flex items-center gap-1 bg-blue-50 p-2 rounded-xl border border-blue-100">
+              <Calculator className="w-3 h-3 shrink-0" />
+              Stok Pcs otomatis dihitung dari sisa takaran resep bahan baku mentah.
+            </p>
+          )}
 
           {/* Submit Button */}
           <button
