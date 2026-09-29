@@ -12,7 +12,7 @@ export default function ShiftClosingModal({
   const [notes, setNotes] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
 
-  // 1. Filter Transaksi Khusus Kasir Aktif (Toleran terhadap variasi atribut DB)
+  // 1. Filter Transaksi Khusus Kasir Aktif
   const cashierOrders = ordersHistory.filter((order) => {
     if (!activeCashier?.name) return true
     const orderCashier =
@@ -56,7 +56,10 @@ export default function ShiftClosingModal({
   const totalOmsetShift = totalCashSales + totalNonCashSales
 
   const handlePrintSummary = () => {
+    const originalTitle = document.title
+    document.title = `Laporan_Closing_Shift_${activeCashier?.name || 'Kasir'}_${new Date().toISOString().split('T')[0]}`
     window.print()
+    document.title = originalTitle
   }
 
   const handleSubmitClosing = (e) => {
@@ -72,22 +75,37 @@ export default function ShiftClosingModal({
       }}
       className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-[100] overflow-y-auto"
     >
+      {/* CSS Cetak Universal: Presisi untuk Printer Bluetooth Thermal (58/80mm) & Rapi Saat Simpan PDF */}
       <style>{`
         @media print {
-          body * { visibility: hidden !important; }
-          #shift-report-printable, #shift-report-printable * { visibility: visible !important; }
+          @page {
+            size: auto;
+            margin: 0mm;
+          }
+          body * { 
+            visibility: hidden !important; 
+          }
+          #shift-report-printable, #shift-report-printable * { 
+            visibility: visible !important; 
+          }
           #shift-report-printable {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
-            width: 58mm !important;
-            padding: 2mm !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 8px !important;
+            margin: 0 !important;
             background: white !important;
             color: black !important;
-            font-size: 10px !important;
+            font-size: 11px !important;
             font-family: monospace !important;
+            box-shadow: none !important;
+            border: none !important;
           }
-          .no-print { display: none !important; }
+          .no-print { 
+            display: none !important; 
+          }
         }
       `}</style>
 
@@ -105,6 +123,7 @@ export default function ShiftClosingModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition"
           >
@@ -116,8 +135,8 @@ export default function ShiftClosingModal({
         <div id="shift-report-printable" className="space-y-3.5">
           
           {/* Header Printable */}
-          <div className="text-center space-y-0.5 border-b border-dashed border-slate-200 pb-2">
-            <h2 className="font-black text-sm text-slate-900 uppercase">MEDIUM BREWSPACE</h2>
+          <div className="text-center space-y-0.5 border-b border-dashed border-slate-200 pb-3">
+            <h2 className="font-black text-sm text-slate-900 uppercase tracking-wider">MEDIUM BREWSPACE</h2>
             <p className="text-[10px] text-slate-500 font-bold">LAPORAN CLOSING SHIFT KASIR</p>
             <p className="text-[9px] text-slate-400 font-mono">
               Petugas: {activeCashier?.name || 'Kasir'} • {new Date().toLocaleString('id-ID')}
@@ -210,9 +229,13 @@ export default function ShiftClosingModal({
               </button>
             </form>
           ) : (
-            /* TAMPILAN HASIL RECONCILE (BISA DICETAK) */
+            /* TAMPILAN HASIL RECONCILE (BISA DICETAK TERMAL MAUPUN SIMPAN PDF) */
             <div className="space-y-3 font-mono text-xs">
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-1.5">
+                <div className="flex justify-between">
+                  <span>Total Transaksi:</span>
+                  <span className="font-bold">{cashierOrders.length} Nota</span>
+                </div>
                 <div className="flex justify-between">
                   <span>Modal Awal:</span>
                   <span className="font-bold">Rp {startCashNum.toLocaleString('id-ID')}</span>
@@ -253,7 +276,8 @@ export default function ShiftClosingModal({
                   onClick={handlePrintSummary}
                   className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition active:scale-98"
                 >
-                  <Printer className="w-4 h-4" /> Cetak Laporan
+                  <Printer className="w-4 h-4" />
+                  <span>Cetak / Simpan PDF</span>
                 </button>
                 <button
                   type="button"

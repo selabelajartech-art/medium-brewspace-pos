@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Plus, Trash2, ChefHat, Calculator } from 'lucide-react'
+import { X, Plus, Trash2, ChefHat } from 'lucide-react'
 
 export default function RecipeManagerModal({
   product,
@@ -10,31 +10,47 @@ export default function RecipeManagerModal({
   handleDeleteRecipeItem
 }) {
   const variant = product?.product_variants?.[0]
+  const variantId = variant?.id
   const [selectedIngredientId, setSelectedIngredientId] = useState('')
   const [qtyRequired, setQtyRequired] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  // Filter resep untuk produk ini
-  const currentRecipes = productRecipes.filter((r) => r.variant_id === variant?.id)
+  // Filter resep untuk produk ini dan pastikan bahan bakunya benar-benar ada di ingredientsList (mencegah data yatim)
+  const currentRecipes = (productRecipes || []).filter(
+    (r) =>
+      String(r.variant_id) === String(variantId) &&
+      ingredientsList.some((ing) => String(ing.id) === String(r.ingredient_id))
+  )
 
   // Kalkulasi Otomatis Total HPP (COGS)
   const totalHPP = currentRecipes.reduce((sum, item) => {
-    const ing = ingredientsList.find((i) => i.id === item.ingredient_id)
+    const ing = ingredientsList.find((i) => String(i.id) === String(item.ingredient_id))
     const cost = ing ? parseFloat(ing.cost_per_unit || 0) : 0
     return sum + cost * parseFloat(item.quantity_required || 0)
   }, 0)
 
-  const handleAddIngredient = (e) => {
+  const handleAddIngredient = async (e) => {
     e.preventDefault()
-    if (!selectedIngredientId || !qtyRequired) return alert('Pilih bahan dan masukkan takaran!')
+    if (!selectedIngredientId || !qtyRequired || parseFloat(qtyRequired) <= 0) {
+      return alert('Pilih bahan baku dan masukkan takaran yang valid!')
+    }
 
-    handleSaveRecipe({
-      variant_id: variant?.id,
-      ingredient_id: selectedIngredientId,
-      quantity_required: parseFloat(qtyRequired)
-    })
-
-    setSelectedIngredientId('')
-    setQtyRequired('')
+    setLoading(true)
+    try {
+      if (typeof handleSaveRecipe === 'function') {
+        await handleSaveRecipe({
+          variant_id: variantId,
+          ingredient_id: selectedIngredientId,
+          quantity_required: parseFloat(qtyRequired)
+        })
+      }
+      setSelectedIngredientId('')
+      setQtyRequired('')
+    } catch (err) {
+      console.error('Gagal menyimpan resep:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -42,7 +58,7 @@ export default function RecipeManagerModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose?.()
       }}
-      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-[100] overflow-y-auto"
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-[100] overflow-y-auto animate-in fade-in duration-150"
     >
       <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl relative border border-slate-200/80 space-y-4 my-auto">
         
@@ -97,7 +113,7 @@ export default function RecipeManagerModal({
             <select
               value={selectedIngredientId}
               onChange={(e) => setSelectedIngredientId(e.target.value)}
-              className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl font-semibold text-slate-800 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
+              className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200/80 rounded-xl font-semibold text-slate-800 text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition cursor-pointer"
             >
               <option value="">-- Pilih Bahan --</option>
               {ingredientsList.map((ing) => (
@@ -118,7 +134,8 @@ export default function RecipeManagerModal({
 
             <button
               type="submit"
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs transition shadow-xs flex items-center justify-center shrink-0 active:scale-98"
+              disabled={loading}
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs transition shadow-xs flex items-center justify-center shrink-0 active:scale-98 disabled:opacity-50"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -138,7 +155,7 @@ export default function RecipeManagerModal({
               </div>
             ) : (
               currentRecipes.map((item) => {
-                const ing = ingredientsList.find((i) => i.id === item.ingredient_id)
+                const ing = ingredientsList.find((i) => String(i.id) === String(item.ingredient_id))
                 const itemCost = (ing ? parseFloat(ing.cost_per_unit || 0) : 0) * parseFloat(item.quantity_required || 0)
 
                 return (
@@ -154,8 +171,10 @@ export default function RecipeManagerModal({
                     </div>
                     <button
                       type="button"
+                      disabled={loading}
                       onClick={() => handleDeleteRecipeItem?.(item.id)}
-                      className="text-slate-300 hover:text-red-500 transition p-1"
+                      className="text-slate-300 hover:text-red-500 transition p-1 disabled:opacity-50"
+                      title="Hapus Bahan Ini"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

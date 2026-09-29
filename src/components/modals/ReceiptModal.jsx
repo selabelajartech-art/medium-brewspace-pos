@@ -33,6 +33,41 @@ export default function ReceiptModal({
     if (setSelectedOrderDetail) setSelectedOrderDetail(null)
   }
 
+  // 1. Kalkulasi Item & Subtotal secara Resilien
+  const itemsList = transactionData.items || transactionData.order_items || []
+  const calculatedItemsSubtotal = itemsList.reduce((acc, item) => {
+    const qty = item.quantity || 1
+    const price = item.finalPrice || item.unit_price || 0
+    return acc + (item.subtotal || price * qty)
+  }, 0)
+
+  const subtotalVal = parseFloat(
+    transactionData.subtotal || 
+    transactionData.subtotal_amount || 
+    calculatedItemsSubtotal || 
+    0
+  )
+
+  const grandTotalVal = parseFloat(
+    transactionData.grandTotal || 
+    transactionData.total_amount || 
+    transactionData.total || 
+    0
+  )
+
+  // 2. Deteksi Nilai Diskon dari Seluruh Kemungkinan Variabel (Supabase / State Local)
+  let discountVal = parseFloat(
+    transactionData.discountAmount ?? 
+    transactionData.discount ?? 
+    transactionData.discount_amount ?? 
+    0
+  )
+
+  // Fallback: Jika nilai diskon 0 tetapi Subtotal > Grand Total, hitung selisihnya sebagai diskon
+  if (discountVal === 0 && subtotalVal > grandTotalVal && !transactionData.paymentMode) {
+    discountVal = subtotalVal - grandTotalVal
+  }
+
   return (
     <div
       onClick={(e) => {
@@ -94,7 +129,7 @@ export default function ReceiptModal({
             <h2 className="font-black text-sm uppercase text-slate-900 tracking-wider">MEDIUM BREWSPACE</h2>
             <p className="text-[10px] text-slate-500">Coffee & Community Space</p>
             <p className="text-[9px] text-slate-400 border-b border-dashed border-slate-300 pb-2">
-              {transactionData.date || new Date().toLocaleString('id-ID')}
+              {transactionData.date || new Date(transactionData.created_at || Date.now()).toLocaleString('id-ID')}
             </p>
           </div>
 
@@ -116,7 +151,7 @@ export default function ReceiptModal({
 
           {/* Item Pesanan */}
           <div className="border-t border-b border-dashed border-slate-300 py-2 space-y-1.5 text-[11px]">
-            {(transactionData.items || transactionData.order_items || []).map((item, idx) => {
+            {itemsList.map((item, idx) => {
               const name = item.name || item.product_variants?.products?.name || 'Item'
               const qty = item.quantity || 1
               const price = item.finalPrice || item.unit_price || 0
@@ -136,17 +171,45 @@ export default function ReceiptModal({
             })}
           </div>
 
-          {/* Total & Pembayaran */}
+          {/* Rincian Subtotal, Diskon & Mode Split Bill */}
           <div className="space-y-1 text-[11px] pt-1">
+            {(subtotalVal > grandTotalVal || discountVal > 0) && (
+              <div className="flex justify-between text-slate-600">
+                <span>Subtotal Meja:</span>
+                <span>Rp {subtotalVal.toLocaleString('id-ID')}</span>
+              </div>
+            )}
+
+            {discountVal > 0 && (
+              <div className="flex justify-between text-emerald-600 font-bold">
+                <span>Diskon / Potongan:</span>
+                <span>- Rp {discountVal.toLocaleString('id-ID')}</span>
+              </div>
+            )}
+
+            {transactionData.paymentMode === 'SPLIT_EQUAL' && (
+              <div className="flex justify-between text-blue-600 font-bold">
+                <span>Opsi Bayar:</span>
+                <span>Bagi Rata ({transactionData.splitPeople || 2} Orang)</span>
+              </div>
+            )}
+
+            {transactionData.paymentMode === 'SPLIT_ITEM' && (
+              <div className="flex justify-between text-blue-600 font-bold">
+                <span>Opsi Bayar:</span>
+                <span>Pilih Menu (Parsial)</span>
+              </div>
+            )}
+
             <div className="flex justify-between font-black text-xs text-slate-900 pt-1 border-t border-slate-200">
-              <span>TOTAL</span>
-              <span>Rp {(transactionData.grandTotal || transactionData.total_amount || 0).toLocaleString('id-ID')}</span>
+              <span>TOTAL DIBAYAR</span>
+              <span>Rp {grandTotalVal.toLocaleString('id-ID')}</span>
             </div>
 
             {transactionData.payments && transactionData.payments.map((p, i) => (
               <div key={i} className="flex justify-between text-[10px] text-slate-600">
-                <span>Bayar ({p.method}):</span>
-                <span>Rp {(parseFloat(p.amount) || 0).toLocaleString('id-ID')}</span>
+                <span>Bayar ({p.method || 'CASH'}):</span>
+                <span>Rp {(parseFloat(p.amount) || grandTotalVal).toLocaleString('id-ID')}</span>
               </div>
             ))}
 
