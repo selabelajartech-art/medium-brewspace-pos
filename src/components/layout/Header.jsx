@@ -34,9 +34,17 @@ export default function Header({
       
       {/* Brand & Cashier Status Area */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
-        <div className="lg:hidden w-8 h-8 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
-          MB
-        </div>
+        {/* Logo Kafe: Hanya tampil di Mobile/Tablet (lg:hidden) agar tidak redundan dengan Sidebar */}
+        <img
+          src="/logo.png"
+          alt="Logo Cafe"
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0 bg-white p-0.5 lg:hidden"
+          onError={(e) => {
+            e.target.onerror = null
+            e.target.src = '/logo.jpg'
+          }}
+        />
+
         <div className="space-y-0.5 min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-xs sm:text-sm font-black text-slate-900 tracking-tight truncate">

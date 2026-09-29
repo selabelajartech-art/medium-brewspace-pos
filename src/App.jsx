@@ -431,11 +431,12 @@ export default function App() {
     }
   };
 
-  // HANDLER CHECKOUT RESILIEN (DUAL MODE: ONLINE & OFFLINE INDEXEDDB)
+  // HANDLER CHECKOUT RESILIEN DENGAN SUPPORT DISKON DARI PAYMENT MODAL
   const handleCheckout = async (
     paymentMode = "FULL",
     targetTotal = cartData.grandTotal || 0,
-    splitItemQtyMap = {}
+    splitItemQtyMap = {},
+    appliedDiscount = 0
   ) => {
     if (cartList.length === 0)
       return showToast("Keranjang belanja masih kosong!", "warning");
@@ -455,8 +456,9 @@ export default function App() {
         });
     }
 
-    const currentTotal =
-      paymentMode === "FULL" ? cartData.grandTotal || 0 : targetTotal;
+    const currentSubtotal = cartData.subtotal || targetTotal;
+    const currentDiscount = appliedDiscount || 0;
+    const currentTotal = Math.max(0, targetTotal);
 
     const checkoutPayload = {
       p_store_id: master.CURRENT_STORE_ID,
@@ -466,8 +468,8 @@ export default function App() {
       p_order_type: cartData.orderType || "DINE_IN",
       p_table_number: cartData.tableNumber || "1",
       p_status: "COMPLETED",
-      p_subtotal: currentTotal,
-      p_discount: paymentMode === "FULL" ? cartData.discountAmount || 0 : 0,
+      p_subtotal: currentSubtotal,
+      p_discount: currentDiscount,
       p_tax: 0,
       p_total: currentTotal,
       p_items: itemsToPay.map((i) => ({
@@ -636,8 +638,6 @@ export default function App() {
                   cartData.removeCartItem(key);
                 }}
                 subtotal={cartData.subtotal}
-                discountAmount={cartData.discountAmount}
-                grandTotal={cartData.grandTotal}
                 setShowPaymentModal={(val) => {
                   if (val) playBeepSound();
                   setShowPaymentModal(val);
@@ -654,7 +654,7 @@ export default function App() {
                     {cartList.reduce((a, b) => a + (b?.quantity || 0), 0)} Item Dipilih
                   </span>
                   <span className="font-bold text-xs text-blue-400 font-mono">
-                    Rp {(cartData.grandTotal || 0).toLocaleString("id-ID")}
+                    Rp {(cartData.subtotal || 0).toLocaleString("id-ID")}
                   </span>
                 </div>
                 <button
@@ -811,7 +811,7 @@ export default function App() {
             setTableNumber: cartData.setTableNumber,
             subtotal: cartData.subtotal || 0,
             discountAmount: cartData.discountAmount || 0,
-            grandTotal: cartData.grandTotal || 0,
+            grandTotal: cartData.subtotal || 0,
             updateCartQuantity: cartData.updateCartQuantity,
             removeCartItem: cartData.removeCartItem,
             handleAddToCartWithCustomization: (item) => {

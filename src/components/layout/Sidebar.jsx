@@ -1,5 +1,5 @@
 import React from 'react'
-import { Coffee, LayoutGrid, History, Package, BarChart2, Users } from 'lucide-react'
+import { LayoutGrid, History, Package, BarChart2, Users } from 'lucide-react'
 
 export default function Sidebar({
   activeTab,
@@ -16,11 +16,17 @@ export default function Sidebar({
   return (
     <aside className="hidden lg:flex flex-col justify-between w-60 bg-white border-r border-slate-200/80 p-5 shrink-0 z-20">
       <div className="space-y-8">
-        {/* Brand Header */}
+        {/* Brand Header dengan Logo Gambar untuk Desktop */}
         <div className="flex items-center gap-3 px-1">
-          <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20 shrink-0">
-            <Coffee className="w-5 h-5" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Logo Cafe"
+            className="w-10 h-10 rounded-2xl object-cover border border-slate-200/80 shadow-2xs shrink-0 p-0.5 bg-white"
+            onError={(e) => {
+              e.target.onerror = null
+              e.target.src = '/logo.jpg'
+            }}
+          />
           <div>
             <h1 className="font-black text-slate-900 text-base leading-tight">MedPOS</h1>
             <p className="text-[11px] font-semibold text-blue-600">POS & Cafe System</p>
@@ -59,7 +65,7 @@ export default function Sidebar({
         </nav>
       </div>
 
-      {/* Footer Minimalis Sederhana */}
+      {/* Footer Status System */}
       <div className="pt-4 border-t border-slate-100 px-1">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Sistem</p>
         <p className="text-[11px] font-extrabold text-slate-700 font-mono mt-0.5">v2.4 • Ready</p>

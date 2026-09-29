@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Check, Users, ShoppingBag, Plus, Minus, AlertCircle } from 'lucide-react'
+import { X, Check, Users, ShoppingBag, Plus, Minus, AlertCircle, Percent, DollarSign } from 'lucide-react'
 
 export default function PaymentModal({
   setShowPaymentModal,
@@ -14,13 +14,29 @@ export default function PaymentModal({
   const [splitPeople, setSplitPeople] = useState(2)
   const [splitItemQtyMap, setSplitItemQtyMap] = useState({})
 
+  // State Diskon Terintegrasi
+  const [discountType, setDiscountType] = useState('FIXED') // 'FIXED' (Rp) atau 'PERCENT' (%)
+  const [discountValue, setDiscountValue] = useState('')
+
   const safeCart = Array.isArray(cart) ? cart : []
   const safePayments = Array.isArray(payments) ? payments : []
 
+  // Kalkulasi Diskon
+  const rawDiscountVal = parseFloat(discountValue) || 0
+  const calculatedDiscount = Math.min(
+    grandTotal,
+    discountType === 'PERCENT'
+      ? (grandTotal * rawDiscountVal) / 100
+      : rawDiscountVal
+  )
+
+  const netGrandTotal = Math.max(0, grandTotal - calculatedDiscount)
+
+  // Split Bill Calculations
   const numPeople = parseInt(splitPeople) || 1
-  const baseAmountPerPerson = Math.floor(grandTotal / numPeople)
-  const remainder = grandTotal - (baseAmountPerPerson * numPeople)
-  const splitAmountPerPerson = Math.ceil(grandTotal / numPeople)
+  const baseAmountPerPerson = Math.floor(netGrandTotal / numPeople)
+  const remainder = netGrandTotal - (baseAmountPerPerson * numPeople)
+  const splitAmountPerPerson = Math.ceil(netGrandTotal / numPeople)
 
   const splitItemSubtotal = safeCart.reduce((sum, item) => {
     if (!item) return sum
@@ -33,7 +49,7 @@ export default function PaymentModal({
       ? splitAmountPerPerson
       : paymentMode === 'SPLIT_ITEM'
       ? splitItemSubtotal
-      : (grandTotal || 0)
+      : netGrandTotal
 
   const totalPaid = safePayments.reduce((sum, p) => sum + (parseFloat(p?.amount) || 0), 0)
   const changeAmount = Math.max(0, totalPaid - targetTotal)
@@ -62,7 +78,9 @@ export default function PaymentModal({
     }
   }
 
-  const quickMoneyOptions = Array.from(new Set([targetTotal, 20000, 50000, 100000])).filter(Boolean)
+  const quickMoneyOptions = Array.from(new Set([targetTotal, 10000, 20000, 50000, 100000]))
+    .filter((v) => v >= targetTotal)
+    .sort((a, b) => a - b)
 
   return (
     <div
@@ -77,9 +95,10 @@ export default function PaymentModal({
         <div className="flex justify-between items-center border-b border-slate-100 pb-3">
           <div>
             <h3 className="font-extrabold text-base text-slate-900">Proses Pembayaran</h3>
-            <p className="text-[11px] text-slate-400 font-medium">Pilih metode bayar atau pisah tagihan.</p>
+            <p className="text-[11px] text-slate-400 font-medium">Atur diskon, pisah tagihan, atau pilih metode bayar.</p>
           </div>
           <button 
+            type="button"
             onClick={() => setShowPaymentModal?.(false)} 
             className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition"
           >
@@ -93,7 +112,7 @@ export default function PaymentModal({
             type="button"
             onClick={() => {
               setPaymentMode('FULL')
-              if (typeof setPayments === 'function') setPayments([{ method: 'CASH', amount: (grandTotal || 0).toString() }])
+              if (typeof setPayments === 'function') setPayments([{ method: 'CASH', amount: netGrandTotal.toString() }])
             }}
             className={`py-2 rounded-lg transition ${paymentMode === 'FULL' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
@@ -121,6 +140,89 @@ export default function PaymentModal({
           </button>
         </div>
 
+        {/* Panel Input Diskon Transaksi */}
+        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+          <div className="flex justify-between items-center text-xs">
+            <span className="font-extrabold text-slate-700">Diskon / Potongan Harga</span>
+            {calculatedDiscount > 0 && (
+              <span className="font-extrabold text-emerald-600 font-mono text-[11px]">
+                - Rp {calculatedDiscount.toLocaleString('id-ID')}
+              </span>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <div className="flex bg-white border border-slate-200 rounded-xl p-0.5 text-xs font-bold shrink-0">
+              <button
+                type="button"
+                onClick={() => setDiscountType('FIXED')}
+                className={`px-2.5 py-1 rounded-lg transition ${discountType === 'FIXED' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setDiscountType('PERCENT')}
+                className={`px-2.5 py-1 rounded-lg transition ${discountType === 'PERCENT' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}
+              >
+                <Percent className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <input
+              type="number"
+              min="0"
+              placeholder={discountType === 'PERCENT' ? '10 (%)' : '5000 (Rp)'}
+              value={discountValue}
+              onChange={(e) => {
+                const val = e.target.value
+                setDiscountValue(val)
+                const num = parseFloat(val) || 0
+                const disc = discountType === 'PERCENT' ? (grandTotal * num) / 100 : num
+                const newNet = Math.max(0, grandTotal - disc)
+                if (typeof setPayments === 'function' && paymentMode === 'FULL') {
+                  setPayments([{ method: safePayments[0]?.method || 'CASH', amount: newNet.toString() }])
+                }
+              }}
+              className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
+            />
+          </div>
+
+          {/* Quick Preset Diskon */}
+          <div className="flex gap-1.5 overflow-x-auto pt-0.5">
+            {[5, 10, 15, 20, 50].map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                onClick={() => {
+                  setDiscountType('PERCENT')
+                  setDiscountValue(pct.toString())
+                  const disc = (grandTotal * pct) / 100
+                  const newNet = Math.max(0, grandTotal - disc)
+                  if (typeof setPayments === 'function' && paymentMode === 'FULL') {
+                    setPayments([{ method: safePayments[0]?.method || 'CASH', amount: newNet.toString() }])
+                  }
+                }}
+                className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200/80 text-[10px] font-bold text-slate-600 rounded-lg shrink-0"
+              >
+                {pct}%
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setDiscountValue('')
+                if (typeof setPayments === 'function' && paymentMode === 'FULL') {
+                  setPayments([{ method: safePayments[0]?.method || 'CASH', amount: grandTotal.toString() }])
+                }
+              }}
+              className="px-2.5 py-1 bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold rounded-lg shrink-0"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
         {/* Opsi Bagi Rata */}
         {paymentMode === 'SPLIT_EQUAL' && (
           <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-200/60 space-y-2 text-xs">
@@ -135,7 +237,7 @@ export default function PaymentModal({
                     type="button"
                     onClick={() => {
                       setSplitPeople(num)
-                      const amt = Math.ceil((grandTotal || 0) / num)
+                      const amt = Math.ceil(netGrandTotal / num)
                       if (typeof setPayments === 'function') setPayments([{ method: safePayments[0]?.method || 'CASH', amount: amt.toString() }])
                     }}
                     className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-xl font-bold text-xs border transition ${
@@ -245,7 +347,7 @@ export default function PaymentModal({
                   setPayments([{ ...(safePayments[0] || {}), method: e.target.value }])
                 }
               }}
-              className="w-full sm:w-1/2 bg-white text-slate-800 text-xs p-2.5 rounded-xl font-bold border border-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:outline-none transition"
+              className="w-full sm:w-1/2 bg-white text-slate-800 text-xs p-2.5 rounded-xl font-bold border border-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:outline-none transition cursor-pointer"
             >
               <option value="CASH">Tunai</option>
               <option value="QRIS">QRIS / E-Wallet</option>
@@ -293,7 +395,7 @@ export default function PaymentModal({
           disabled={checkoutLoading || totalPaid < targetTotal || targetTotal === 0}
           onClick={() => {
             if (typeof handleCheckout === 'function') {
-              handleCheckout(paymentMode, targetTotal, splitItemQtyMap)
+              handleCheckout(paymentMode, targetTotal, splitItemQtyMap, calculatedDiscount)
             }
           }}
           className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs transition shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-400 active:scale-98"
