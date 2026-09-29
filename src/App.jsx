@@ -22,6 +22,14 @@ import {
 } from "./utils/offlineStore";
 import { ShoppingCart } from "lucide-react";
 
+// Helper Format Waktu Lokal (Mencegah Bug Tanggal UTC Shift)
+const getLocalDateString = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState("pos");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
@@ -76,17 +84,13 @@ export default function App() {
   const [lastTransaction, setLastTransaction] = useState(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
-  // Filters & Calendar States
+  // Filters & Calendar States (Menggunakan Format Tanggal Lokal WIB)
   const [historySearch, setHistorySearch] = useState("");
-  const [startDate, setStartDate] = useState(
-    () =>
-      new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-        .toISOString()
-        .split("T")[0],
-  );
-  const [endDate, setEndDate] = useState(
-    () => new Date().toISOString().split("T")[0],
-  );
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  });
+  const [endDate, setEndDate] = useState(() => getLocalDateString());
   const [filterPreset, setFilterPreset] = useState("this_month");
 
   // Custom Hooks Data
@@ -580,7 +584,7 @@ export default function App() {
         orderId = savedTemp.temp_id;
       }
 
-      // Potong Stok Bahan Baku Lokal (Dengan String Casting Aman untuk UUID/ID)
+      // Potong Stok Bahan Baku Lokal
       itemsToPay.forEach((cartItem) => {
         const recipes = (master.productRecipes || []).filter(
           (r) => String(r.variant_id) === String(cartItem.variant_id)
