@@ -13,7 +13,7 @@ import HppCalculatorModal from './HppCalculatorModal'
 import PinAuthModal from './PinAuthModal'
 import ShiftClosingModal from './ShiftClosingModal'
 import CategoryManagerModal from './CategoryManagerModal'
-import ConfirmDeleteModal from './ConfirmDeleteModal' // <-- Import Baru
+import ConfirmDeleteModal from './ConfirmDeleteModal'
 import { X } from 'lucide-react'
 
 export default function ModalContainer({ modalState = {} }) {
@@ -34,10 +34,8 @@ export default function ModalContainer({ modalState = {} }) {
     selectedOrderDetail, setSelectedOrderDetail,
     isMobileCartOpen, setIsMobileCartOpen,
     
-    // State Hapus Transaksi Baru
     orderToDelete, setOrderToDelete, confirmExecuteDelete,
 
-    // Data Handlers & Lists
     categories = [], toppingsList = [], setToppingsList, ingredientsList = [], setIngredientsList,
     productRecipes = [], setProductRecipes, tablesList = [], setTablesList, staffList = [], setStaffList, activeCashier, setActiveCashier,
     ordersHistory = [],
@@ -159,6 +157,8 @@ export default function ModalContainer({ modalState = {} }) {
           productForm={productForm}
           setProductForm={setProductForm}
           categories={categories}
+          ingredientsList={ingredientsList}
+          productRecipes={productRecipes}
           handleSaveProduct={handleSaveProduct}
         />
       )}

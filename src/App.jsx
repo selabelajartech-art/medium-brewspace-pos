@@ -53,7 +53,7 @@ export default function App() {
   const [showHppModal, setShowHppModal] = useState(false);
   const [showShiftClosingModal, setShowShiftClosingModal] = useState(false);
 
-  // State Hapus Transaksi (Custom Pop-up Modal)
+  // State Hapus Transaksi
   const [orderToDelete, setOrderToDelete] = useState(null);
 
   // State PIN Auth Modal
@@ -108,6 +108,58 @@ export default function App() {
     ? cartData.payments
     : [];
 
+  // SINKRONISASI STOK MENU OTOMATIS BERDASARKAN KANTONG BAHAN BAKU (BOTTLENECK)
+  const syncVariantStockFromRecipes = async (variantId) => {
+    if (!variantId) return;
+
+    const { data: recipes } = await supabase
+      .from("product_recipes")
+      .select("ingredient_id, quantity_required")
+      .eq("variant_id", variantId);
+
+    if (!recipes || recipes.length === 0) return;
+
+    const ingIds = recipes.map((r) => r.ingredient_id);
+    const { data: ingredients } = await supabase
+      .from("ingredients")
+      .select("id, current_stock")
+      .in("id", ingIds);
+
+    if (!ingredients || ingredients.length === 0) return;
+
+    const capacities = recipes.map((r) => {
+      const ing = ingredients.find((i) => String(i.id) === String(r.ingredient_id));
+      if (!ing) return 0;
+      const currentStock = parseFloat(ing.current_stock || 0);
+      const qtyReq = parseFloat(r.quantity_required || 0);
+      return qtyReq > 0 ? Math.floor(currentStock / qtyReq) : 0;
+    });
+
+    const newStock = Math.min(...capacities);
+
+    await supabase
+      .from("inventories")
+      .update({ stock: newStock })
+      .eq("variant_id", variantId)
+      .eq("store_id", master.CURRENT_STORE_ID);
+  };
+
+  const syncAllVariantsUsingIngredient = async (ingredientId) => {
+    if (!ingredientId) return;
+
+    const { data: recipes } = await supabase
+      .from("product_recipes")
+      .select("variant_id")
+      .eq("ingredient_id", ingredientId);
+
+    if (!recipes || recipes.length === 0) return;
+
+    const variantIds = [...new Set(recipes.map((r) => r.variant_id))];
+    for (const vId of variantIds) {
+      await syncVariantStockFromRecipes(vId);
+    }
+  };
+
   // PINTASAN KEYBOARD (HOTKEYS)
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -155,7 +207,7 @@ export default function App() {
   // SYNC LOCK UNTUK MENCEGAH DUPLIKASI SINKRONISASI OFFLINE
   const isSyncingRef = useRef(false);
 
-  // AUTO-SYNC TRANSAKSI OFFLINE KE CLOUD (TANPA DUPLIKASI BERKALI-KALI)
+  // AUTO-SYNC TRANSAKSI OFFLINE KE CLOUD
   useEffect(() => {
     const syncOfflineOrders = async () => {
       if (!navigator.onLine || isSyncingRef.current) return;
@@ -457,7 +509,6 @@ export default function App() {
     let currentSubtotal = cartData.subtotal || targetTotal;
     const numPeople = Math.max(1, parseInt(splitPeopleCount) || 1);
 
-    // 1. Penyesuaian Kuantitas / Harga Item Berdasarkan Mode Bayar
     if (paymentMode === "SPLIT_ITEM") {
       itemsToPay = cartList
         .filter((item) => (splitItemQtyMap[item?.cartKey] || 0) > 0)
@@ -510,7 +561,6 @@ export default function App() {
         method: p.method,
         amount: parseFloat(p.amount) || currentTotal,
       })),
-      // Metadata Split Bill yang dikirimkan ke Supabase Procedure
       p_payment_mode: paymentMode,
       p_split_people: numPeople,
     };
@@ -530,16 +580,16 @@ export default function App() {
         orderId = savedTemp.temp_id;
       }
 
-      // Potong Stok Bahan Baku Lokal (Proporsional per porsi orang)
+      // Potong Stok Bahan Baku Lokal (Dengan String Casting Aman untuk UUID/ID)
       itemsToPay.forEach((cartItem) => {
         const recipes = (master.productRecipes || []).filter(
-          (r) => r.variant_id === cartItem.variant_id
+          (r) => String(r.variant_id) === String(cartItem.variant_id)
         );
         recipes.forEach((rec) => {
           if (master.setIngredientsList) {
             master.setIngredientsList((prev) =>
               (Array.isArray(prev) ? prev : []).map((ing) => {
-                if (ing.id === rec.ingredient_id) {
+                if (String(ing.id) === String(rec.ingredient_id)) {
                   const deductionFactor = paymentMode === "SPLIT_EQUAL" ? (1 / numPeople) : 1;
                   const totalDeduction =
                     parseFloat(rec.quantity_required) *
@@ -549,7 +599,7 @@ export default function App() {
                     ...ing,
                     current_stock: Math.max(
                       0,
-                      ing.current_stock - totalDeduction
+                      parseFloat(ing.current_stock || 0) - totalDeduction
                     ),
                   };
                 }
@@ -560,7 +610,6 @@ export default function App() {
         });
       });
 
-      // Data Transaksi Lengkap untuk Struk
       setLastTransaction({
         id: orderId,
         order_number: "ORD-" + orderId.substring(0, 6).toUpperCase(),
@@ -584,7 +633,6 @@ export default function App() {
       setIsMobileCartOpen(false);
       setShowReceiptModal(true);
 
-      // Manajemen Keranjang Belanja Setelah Pembayaran
       if (paymentMode === "SPLIT_ITEM") {
         if (cartData.setCart) {
           cartData.setCart((prev) =>
@@ -815,7 +863,7 @@ export default function App() {
             handleSaveCategory,
             handleDeleteCategory,
 
-            // CRUD Bahan Baku Mentah
+            // CRUD Bahan Baku Mentah (Auto Sync Stok)
             handleSaveIngredient: async (ingData) => {
               try {
                 const payload = {
@@ -826,6 +874,8 @@ export default function App() {
                   min_stock: parseFloat(ingData.min_stock) || 0,
                   cost_per_unit: parseFloat(ingData.cost_per_unit) || 0,
                 };
+
+                let targetIngId = ingData.id;
 
                 if (ingData.id) {
                   const { data: updatedIng, error } = await supabase
@@ -855,6 +905,7 @@ export default function App() {
                     .single();
 
                   if (error) throw error;
+                  if (newIng) targetIngId = newIng.id;
 
                   if (master.setIngredientsList && newIng) {
                     master.setIngredientsList((prev) => [
@@ -863,6 +914,10 @@ export default function App() {
                     ]);
                   }
                   showToast("Bahan baku berhasil disimpan!", "success");
+                }
+
+                if (targetIngId) {
+                  await syncAllVariantsUsingIngredient(targetIngId);
                 }
 
                 if (master.fetchInitialData) await master.fetchInitialData();
@@ -908,7 +963,7 @@ export default function App() {
               }
             },
 
-            // CRUD Resep Menu
+            // CRUD Resep Menu (Auto Sync Stok)
             handleSaveRecipe: async (recipeData) => {
               try {
                 const existing = (master.productRecipes || []).find(
@@ -936,6 +991,8 @@ export default function App() {
                   if (error) throw error;
                 }
 
+                await syncVariantStockFromRecipes(recipeData.variant_id);
+
                 if (master.fetchInitialData) await master.fetchInitialData();
                 playBeepSound();
                 showToast("Resep berhasil disimpan!", "success");
@@ -946,11 +1003,21 @@ export default function App() {
 
             handleDeleteRecipeItem: async (id) => {
               try {
+                const { data: targetRecipe } = await supabase
+                  .from("product_recipes")
+                  .select("variant_id")
+                  .eq("id", id)
+                  .single();
+
                 const { error } = await supabase
                   .from("product_recipes")
                   .delete()
                   .eq("id", id);
                 if (error) throw error;
+
+                if (targetRecipe?.variant_id) {
+                  await syncVariantStockFromRecipes(targetRecipe.variant_id);
+                }
 
                 if (master.fetchInitialData) await master.fetchInitialData();
                 playBeepSound();
