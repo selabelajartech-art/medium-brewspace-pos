@@ -144,7 +144,7 @@ export function useMasterData() {
 
       const [prodRes, catRes, custRes, ingRes, recRes] = await Promise.all([
         supabase.from('products').select(`
-          id, name, barcode, image_url, category_id,
+          id, name, barcode, image_url, category_id, is_active,
           product_variants (id, variant_name, price, cogs, inventories(stock))
         `).order('name'),
         supabase.from('categories').select('*').order('name'),
