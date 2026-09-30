@@ -1,16 +1,22 @@
-# React + Vite
+# MedPOS - Point of Sale & Cafe System
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplikasi POS web berbasis React, Tailwind CSS, dan Supabase Backend.
 
-Currently, two official plugins are available:
+## Fitur Utama
+- POS & Kasir dengan Split-Bill (Bagi Rata & Pilih Menu).
+- Manajemen Stok Bahan Baku Mentah & Sinkronisasi Otomatis Stok Menu.
+- Transaksi Offline-Capable (IndexedDB Fallback).
+- Pencetakan Struk via Bluetooth & Sistem OS.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Struktur Database (Supabase)
+- Seluruh DDL SQL & Stored Procedure tersimpan di file `database_master.sql`.
+- Fungsi utama checkout: `process_advanced_checkout`.
+- Trigger sinkronisasi stok: `sync_inventory_stock_on_ingredient_update`.
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Cara Menjalankan Proyek
+1. Clone / Extract repository ini.
+2. Jalankan `npm install` di terminal.
+3. Buat file `.env` dan isi dengan konfigurasi Supabase:
+   ```env
+   VITE_SUPABASE_URL=[https://your-project.supabase.co](https://your-project.supabase.co)
+   VITE_SUPABASE_ANON_KEY=your-anon-key

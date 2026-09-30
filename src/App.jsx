@@ -277,7 +277,7 @@ export default function App() {
 
   // Filter Logic
   const filteredProducts = productsList.filter((p) => {
-    if (!p) return false;
+    if (!p || p.is_active === false) return false;
     const matchCat =
       selectedCategory === "ALL" || p.category_id === selectedCategory;
     const matchSearch = (p.name || "")
@@ -776,10 +776,21 @@ export default function App() {
             categories={categoriesList}
             handleOpenProductModal={handleOpenProductModal}
             handleDeleteProduct={async (id) => {
-              if (confirm("Hapus produk ini?")) {
-                await supabase.from("products").delete().eq("id", id);
-                if (master.fetchInitialData) master.fetchInitialData();
-                showToast("Produk berhasil dihapus!", "success");
+              if (confirm("Non-aktifkan produk ini?")) return;
+
+              try{
+                const { error } = await supabase.
+                from("product_variants")
+                .update({ is_active: false }).
+                eq("id", id);
+
+                if (error) throw error;
+
+                if (master.fetchInitialData) await master.fetchInitialData();
+                playBeepSound();
+                showToast("Produk berhasil dinonaktifkan!", "success");
+              } catch(err){
+                showToast("Gagal menonaktifkan produk: " + err.message, "error");
               }
             }}
             setShowToppingModal={setShowToppingModal}
