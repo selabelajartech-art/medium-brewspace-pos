@@ -1,22 +1,27 @@
 import React from 'react'
-import { LayoutGrid, History, Package, BarChart2, Users } from 'lucide-react'
+import { LayoutGrid, History, Package, BarChart2, Users, Lock } from 'lucide-react'
 
 export default function Sidebar({
   activeTab,
   setActiveTab,
-  setShowAdminStaffModal
+  setShowAdminStaffModal,
+  isManagerOrAdmin,
+  lockTerminal
 }) {
-  const navItems = [
-    { id: 'pos', label: 'Kasir (POS)', icon: LayoutGrid },
-    { id: 'history', label: 'Riwayat Order', icon: History },
-    { id: 'inventory', label: 'Kelola Menu', icon: Package },
-    { id: 'reports', label: 'Laporan Keuangan', icon: BarChart2 }
+  // Penyaringan Item Navigasi Berdasarkan Role Staf
+  const allNavItems = [
+    { id: 'pos', label: 'Kasir (POS)', icon: LayoutGrid, managerOnly: false },
+    { id: 'history', label: 'Riwayat Order', icon: History, managerOnly: false },
+    { id: 'inventory', label: 'Kelola Menu', icon: Package, managerOnly: true },
+    { id: 'reports', label: 'Laporan Keuangan', icon: BarChart2, managerOnly: true }
   ]
+
+  const navItems = allNavItems.filter((item) => !item.managerOnly || isManagerOrAdmin)
 
   return (
     <aside className="hidden lg:flex flex-col justify-between w-60 bg-white border-r border-slate-200/80 p-5 shrink-0 z-20">
       <div className="space-y-8">
-        {/* Brand Header dengan Logo Gambar untuk Desktop */}
+        {/* Brand Header */}
         <div className="flex items-center gap-3 px-1">
           <img
             src="/logo.png"
@@ -54,21 +59,33 @@ export default function Sidebar({
             )
           })}
 
-          {/* Tombol Kelola Tim Staf */}
-          <button
-            onClick={() => setShowAdminStaffModal?.(true)}
-            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-xs text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all"
-          >
-            <Users className="w-4 h-4 text-slate-400" />
-            <span>Kelola Tim Kasir</span>
-          </button>
+          {/* Tombol Kelola Tim Staf (Hanya Manager/Admin) */}
+          {isManagerOrAdmin && (
+            <button
+              onClick={() => setShowAdminStaffModal?.(true)}
+              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-xs text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all"
+            >
+              <Users className="w-4 h-4 text-slate-400" />
+              <span>Kelola Tim Kasir</span>
+            </button>
+          )}
         </nav>
       </div>
 
-      {/* Footer Status System */}
-      <div className="pt-4 border-t border-slate-100 px-1">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Sistem</p>
-        <p className="text-[11px] font-extrabold text-slate-700 font-mono mt-0.5">v2.4 • Ready</p>
+      {/* Footer Area: Tombol Kunci Terminal & Status System */}
+      <div className="pt-4 border-t border-slate-100 space-y-3 px-1">
+        <button
+          onClick={lockTerminal}
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 rounded-xl text-xs font-bold transition active:scale-95 border border-slate-200/80"
+        >
+          <Lock className="w-3.5 h-3.5" />
+          <span>Kunci Terminal</span>
+        </button>
+
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Sistem</p>
+          <p className="text-[11px] font-extrabold text-slate-700 font-mono mt-0.5">v2.4 • Secured</p>
+        </div>
       </div>
     </aside>
   )

@@ -10,7 +10,6 @@ export function useMasterData() {
   const [ordersHistory, setOrdersHistory] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Data Staf dari Supabase (Profiles)
   const [staffList, setStaffList] = useState(() => {
     try {
       const saved = localStorage.getItem('medium_brew_staff_list')
@@ -73,7 +72,6 @@ export function useMasterData() {
     }
   })
 
-  // Sinkronisasi ke LocalStorage (Caching Offline)
   useEffect(() => { localStorage.setItem('medium_brew_staff_list', JSON.stringify(staffList)) }, [staffList])
   useEffect(() => { 
     if (activeCashier) {
@@ -89,7 +87,6 @@ export function useMasterData() {
     fetchInitialData()
     fetchHistory()
 
-    // Realtime Listener untuk Tabel Profiles
     const profilesChannel = supabase
       .channel('public:profiles')
       .on(
@@ -106,7 +103,6 @@ export function useMasterData() {
     }
   }, [])
 
-  // Fungsi khusus mengambil data staf dari tabel profiles Supabase
   const fetchProfiles = async () => {
     try {
       const { data, error } = await supabase
@@ -125,12 +121,12 @@ export function useMasterData() {
 
         setStaffList(formatted)
 
-        // Perbarui activeCashier dengan data terbaru jika ada
+        // Hanya perbarui activeCashier jika sudah ada kasir yang terpilih
         setActiveCashier(prev => {
-          if (!prev) return formatted[0]
-          const updated = formatted.find(s => s.id === prev.id)
-          return updated || formatted[0]
-        })
+          if (!prev) return null; // Tidak memaksa memilih Manager saat locked!
+          const updated = formatted.find(s => s.id === prev.id);
+          return updated || prev;
+        });
       }
     } catch (e) {
       console.error('Fetch Profiles Error:', e)
@@ -196,7 +192,7 @@ export function useMasterData() {
     loading,
     staffList: Array.isArray(staffList) ? staffList : [],
     setStaffList,
-    activeCashier: activeCashier || staffList[0] || { name: 'Kasir', role: 'CASHIER' },
+    activeCashier,
     setActiveCashier,
     tablesList: Array.isArray(tablesList) ? tablesList : [],
     setTablesList,

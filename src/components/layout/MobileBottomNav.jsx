@@ -1,13 +1,16 @@
 import React from 'react'
 import { Store, History, Package, BarChart3 } from 'lucide-react'
 
-export default function MobileBottomNav({ activeTab, setActiveTab }) {
-  const navItems = [
-    { id: 'pos', label: 'Kasir', icon: Store },
-    { id: 'history', label: 'Riwayat', icon: History },
-    { id: 'inventory', label: 'Stok', icon: Package },
-    { id: 'reports', label: 'Laporan', icon: BarChart3 }
+export default function MobileBottomNav({ activeTab, setActiveTab, isManagerOrAdmin }) {
+  // Penyaringan Item Navigasi Mobile Berdasarkan Role Staf
+  const allNavItems = [
+    { id: 'pos', label: 'Kasir', icon: Store, managerOnly: false },
+    { id: 'history', label: 'Riwayat', icon: History, managerOnly: false },
+    { id: 'inventory', label: 'Stok', icon: Package, managerOnly: true },
+    { id: 'reports', label: 'Laporan', icon: BarChart3, managerOnly: true }
   ]
+
+  const navItems = allNavItems.filter((item) => !item.managerOnly || isManagerOrAdmin)
 
   return (
     <div className="lg:hidden bg-white/95 backdrop-blur-md border-t border-slate-200/80 flex justify-around items-center py-2 px-2 fixed bottom-0 left-0 right-0 z-40">

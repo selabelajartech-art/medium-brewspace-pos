@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Users, Calculator, ChevronDown } from 'lucide-react'
+import { Search, Users, Calculator, ChevronDown, Lock } from 'lucide-react'
 
 export default function Header({
   activeCashier,
@@ -8,7 +8,9 @@ export default function Header({
   setShowAdminStaffModal,
   showShiftDropdown,
   setShowShiftDropdown,
-  setShowShiftClosingModal
+  setShowShiftClosingModal,
+  isManagerOrAdmin,
+  lockTerminal
 }) {
   const [isOnline, setIsOnline] = useState(navigator.onLine)
 
@@ -26,7 +28,7 @@ export default function Header({
   }, [])
 
   const cashierName = activeCashier?.name || 'Kasir'
-  const cashierRole = activeCashier?.role || 'KASIR'
+  const cashierRole = activeCashier?.role || 'CASHIER'
   const cashierInitials = activeCashier?.initials || 'KS'
 
   return (
@@ -34,7 +36,6 @@ export default function Header({
       
       {/* Brand & Cashier Status Area */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
-        {/* Logo Kafe: Hanya tampil di Mobile/Tablet (lg:hidden) agar tidak redundan dengan Sidebar */}
         <img
           src="/logo.png"
           alt="Logo Cafe"
@@ -51,7 +52,7 @@ export default function Header({
               Medium Brewspace
             </h2>
 
-            {/* Indikator Status Koneksi */}
+            {/* Indikator Online/Offline */}
             {isOnline ? (
               <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200/80 text-[9px] sm:text-[10px] font-mono font-extrabold text-emerald-700 shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -88,8 +89,19 @@ export default function Header({
         </div>
       </div>
 
-      {/* Profile & Shift Dropdown Trigger */}
-      <div className="relative shrink-0">
+      {/* Quick Lock & Profile Area */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 relative">
+        {/* Tombol Kunci Cepat untuk Mobile/Tablet */}
+        <button
+          type="button"
+          onClick={lockTerminal}
+          title="Kunci Terminal"
+          className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200/80 rounded-xl transition active:scale-95"
+        >
+          <Lock className="w-4 h-4" />
+        </button>
+
+        {/* Profile Dropdown Trigger */}
         <button
           type="button"
           onClick={() => setShowShiftDropdown?.(!showShiftDropdown)}
@@ -105,7 +117,7 @@ export default function Header({
           <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
         </button>
 
-        {/* Dropdown Menu Modal Trigger */}
+        {/* Dropdown Menu */}
         {showShiftDropdown && (
           <div className="absolute right-0 top-11 sm:top-12 w-52 sm:w-56 bg-white border border-slate-200 rounded-2xl shadow-2xl p-1.5 z-50 space-y-1 animate-in fade-in slide-in-from-top-2 duration-150">
             <div className="px-3 py-2 bg-slate-50 rounded-xl border border-slate-100">
@@ -129,13 +141,27 @@ export default function Header({
               type="button"
               onClick={() => {
                 setShowShiftDropdown?.(false)
-                setShowAdminStaffModal?.(true)
+                lockTerminal?.()
               }}
-              className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition flex items-center gap-2.5"
+              className="w-full text-left px-3 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition flex items-center gap-2.5"
             >
-              <Users className="w-4 h-4 text-slate-500" />
-              <span>Ganti / Kelola Petugas</span>
+              <Lock className="w-4 h-4 text-rose-500" />
+              <span>Kunci Terminal</span>
             </button>
+
+            {isManagerOrAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowShiftDropdown?.(false)
+                  setShowAdminStaffModal?.(true)
+                }}
+                className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl transition flex items-center gap-2.5"
+              >
+                <Users className="w-4 h-4 text-slate-500" />
+                <span>Kelola Tim Petugas</span>
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -14,9 +14,11 @@ export default function AppLayout({
   showShiftDropdown,
   setShowShiftDropdown,
   setShowAdminStaffModal,
-  setShowShiftClosingModal, // <-- Diterima dari App.jsx
+  setShowShiftClosingModal,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  isManagerOrAdmin,
+  lockTerminal
 }) {
   return (
     <div className="h-screen w-screen bg-slate-100 sm:p-4 font-sans text-slate-800 antialiased select-none flex items-center justify-center overflow-hidden">
@@ -32,6 +34,8 @@ export default function AppLayout({
           setShowShiftDropdown={setShowShiftDropdown}
           staffList={staffList}
           setActiveCashier={setActiveCashier}
+          isManagerOrAdmin={isManagerOrAdmin}
+          lockTerminal={lockTerminal}
         />
 
         {/* Content Area */}
@@ -43,7 +47,9 @@ export default function AppLayout({
             setShowAdminStaffModal={setShowAdminStaffModal}
             showShiftDropdown={showShiftDropdown}
             setShowShiftDropdown={setShowShiftDropdown}
-            setShowShiftClosingModal={setShowShiftClosingModal} // <-- Diteruskan ke Header
+            setShowShiftClosingModal={setShowShiftClosingModal}
+            isManagerOrAdmin={isManagerOrAdmin}
+            lockTerminal={lockTerminal}
           />
 
           <div className="flex-1 flex overflow-hidden min-h-0 relative">
@@ -51,7 +57,11 @@ export default function AppLayout({
           </div>
 
           {/* Bottom Nav Mobile */}
-          <MobileBottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+          <MobileBottomNav
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            isManagerOrAdmin={isManagerOrAdmin}
+          />
         </div>
       </div>
     </div>
